@@ -1,0 +1,8 @@
+{
+  "name": "Remix Aplikasi Absensi Kepala Sekolah Diniyah Al-Husaini",
+  "description": "Aplikasi web absensi guru dan siswa khusus Kepala Sekolah lengkap dengan rekapitulasi, grafik absensi, kalender, serta ekspor laporan PDF, Word, dan Cetak.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
