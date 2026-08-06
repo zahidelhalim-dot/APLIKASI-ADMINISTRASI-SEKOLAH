@@ -11,6 +11,8 @@ import {
   GraduationCap,
   Briefcase,
   Layers,
+  CreditCard,
+  QrCode,
 } from 'lucide-react';
 
 interface NavigationGridProps {
@@ -190,18 +192,32 @@ export const NavigationGrid: React.FC<NavigationGridProps> = ({
         </button>
       </div>
 
-      {/* Direct Laporan & Cetak PDF / Word button */}
-      <button
-        onClick={() => onSelectView('laporan')}
-        className={`w-full py-3 px-4 rounded-xl font-black text-xs uppercase tracking-wider text-white shadow-lg transition-all duration-150 border-b-4 flex items-center justify-center gap-2 ${
-          activeView === 'laporan'
-            ? 'bg-emerald-800 border-emerald-950 ring-4 ring-emerald-300'
-            : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 border-emerald-900 hover:from-emerald-500 hover:to-emerald-600'
-        }`}
-      >
-        <Printer className="w-4 h-4" />
-        <span>LAPORAN & CETAK (PDF / WORD)</span>
-      </button>
+      {/* Direct Laporan & Kartu Siswa buttons */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <button
+          onClick={() => onSelectView('kartu_siswa')}
+          className={`py-3 px-3 rounded-xl font-black text-xs uppercase tracking-wider text-slate-950 shadow-lg transition-all duration-150 border-b-4 flex items-center justify-center gap-2 ${
+            activeView === 'kartu_siswa'
+              ? 'bg-amber-400 border-amber-600 ring-4 ring-amber-300 font-extrabold'
+              : 'bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 border-amber-700 hover:from-amber-300 hover:to-amber-500'
+          }`}
+        >
+          <CreditCard className="w-4 h-4 text-slate-950" />
+          <span>KARTU SISWA & QR SCAN</span>
+        </button>
+
+        <button
+          onClick={() => onSelectView('laporan')}
+          className={`py-3 px-3 rounded-xl font-black text-xs uppercase tracking-wider text-white shadow-lg transition-all duration-150 border-b-4 flex items-center justify-center gap-2 ${
+            activeView === 'laporan'
+              ? 'bg-emerald-800 border-emerald-950 ring-4 ring-emerald-300'
+              : 'bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 border-emerald-900 hover:from-emerald-500 hover:to-emerald-600'
+          }`}
+        >
+          <Printer className="w-4 h-4" />
+          <span>LAPORAN & CETAK (PDF/WORD)</span>
+        </button>
+      </div>
     </div>
   );
 };

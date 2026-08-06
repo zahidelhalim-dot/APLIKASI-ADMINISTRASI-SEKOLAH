@@ -33,6 +33,7 @@ export interface Student {
   nama: string;
   jenisKelamin: 'L' | 'P';
   kelas: string;
+  fotoUrl?: string;
 }
 
 export interface Teacher {
@@ -45,6 +46,7 @@ export interface Teacher {
   hariWajib?: string[]; // e.g. ['Senin', 'Rabu'] or ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
   jamWajibMasuk?: string; // e.g. '07:15'
   keteranganJadwal?: string; // e.g. '2 Hari / Minggu'
+  fotoUrl?: string;
 }
 
 export interface AttendanceRecord {
@@ -71,6 +73,7 @@ export type ViewMode =
   | 'dashboard'
   | 'absen_siswa'
   | 'absen_guru'
+  | 'kartu_siswa'
   | 'data_siswa'
   | 'data_guru'
   | 'kategori_kelas'

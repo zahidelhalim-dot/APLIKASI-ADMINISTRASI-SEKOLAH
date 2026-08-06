@@ -19,8 +19,10 @@ import {
   generateInitialAttendance,
 } from './data/initialData';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 import { SchoolInfoCard } from './components/SchoolInfoCard';
 import { NavigationGrid } from './components/NavigationGrid';
+import { DashboardView } from './components/DashboardView';
 import { StudentAttendance } from './components/StudentAttendance';
 import { TeacherAttendance } from './components/TeacherAttendance';
 import { StudentData } from './components/StudentData';
@@ -30,15 +32,16 @@ import { RekapitulasiView } from './components/RekapitulasiView';
 import { GrafikView } from './components/GrafikView';
 import { KalenderView } from './components/KalenderView';
 import { LaporanView } from './components/LaporanView';
+import { StudentCardView } from './components/StudentCardView';
 import { PrintableReportView } from './components/PrintableReportView';
 import { LoginForm } from './components/LoginForm';
 import { ChevronRight, Info, ShieldAlert, X } from 'lucide-react';
 
 export default function App() {
-  // Auth state
+  // Auth state - defaults to null so user MUST login first
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
     const saved = localStorage.getItem('absensi_user');
-    return saved ? JSON.parse(saved) : INITIAL_USERS[0]; // Default Admin
+    return saved ? JSON.parse(saved) : null;
   });
 
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
@@ -84,6 +87,7 @@ export default function App() {
   const [selectedMonth, setSelectedMonth] = useState<MonthOption | null>(MONTH_LIST[1]); // Default August
   const [selectedKelas, setSelectedKelas] = useState<string>('SEMUA');
   const [classicTheme, setClassicTheme] = useState<boolean>(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Sync auth state
   useEffect(() => {
@@ -157,6 +161,13 @@ export default function App() {
     setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   const handleDeleteStudent = (id: string) =>
     setStudents((prev) => prev.filter((s) => s.id !== id));
+  const handleImportStudents = (newStudents: Student[], replaceExisting?: boolean) => {
+    if (replaceExisting) {
+      setStudents(newStudents);
+    } else {
+      setStudents((prev) => [...prev, ...newStudents]);
+    }
+  };
 
   // Teacher CRUD
   const handleAddTeacher = (t: Teacher) => setTeachers((prev) => [...prev, t]);
@@ -164,6 +175,13 @@ export default function App() {
     setTeachers((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
   const handleDeleteTeacher = (id: string) =>
     setTeachers((prev) => prev.filter((t) => t.id !== id));
+  const handleImportTeachers = (newTeachers: Teacher[], replaceExisting?: boolean) => {
+    if (replaceExisting) {
+      setTeachers(newTeachers);
+    } else {
+      setTeachers((prev) => [...prev, ...newTeachers]);
+    }
+  };
 
   // Class CRUD
   const handleAddClass = (newClass: ClassCategory) =>
@@ -188,33 +206,66 @@ export default function App() {
     setAttendanceRecords(generateInitialAttendance());
   };
 
+  // IF NOT LOGGED IN: FORCE FULL SCREEN LOGIN FIRST
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+        <LoginForm
+          onLoginSuccess={handleLoginSuccess}
+          currentUser={null}
+          onLogout={handleLogout}
+          schoolName={schoolInfo.namaSekolah}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`min-h-screen font-sans transition-colors duration-200 ${
+      className={`min-h-screen font-sans transition-colors duration-200 flex ${
         classicTheme
-          ? 'bg-[#402d18] text-amber-950 p-2 sm:p-4'
-          : 'bg-slate-100 text-slate-800 p-2 sm:p-6'
+          ? 'bg-[#332211] text-amber-950'
+          : 'bg-slate-900 text-slate-100'
       }`}
     >
-      {/* Container Frame */}
-      <div
-        className={`max-w-7xl mx-auto rounded-2xl p-3 sm:p-5 border-4 shadow-2xl space-y-4 ${
-          classicTheme
-            ? 'bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 border-amber-800 shadow-amber-950/50'
-            : 'bg-white border-slate-300 shadow-slate-200'
-        }`}
-      >
-        {/* Header Banner */}
-        <Header
-          activeView={activeView}
-          onSelectView={setActiveView}
-          classicTheme={classicTheme}
-          onToggleTheme={() => setClassicTheme(!classicTheme)}
-          onResetData={handleResetData}
-          currentUser={currentUser}
-          onOpenLogin={() => setShowLoginModal(true)}
-          onLogout={handleLogout}
-        />
+      {/* Sidebar Navigation Drawer */}
+      <Sidebar
+        activeView={activeView}
+        onSelectView={setActiveView}
+        selectedMonth={selectedMonth}
+        onSelectMonth={setSelectedMonth}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        schoolName={schoolInfo.namaSekolah}
+        isOpen={isSidebarOpen}
+        onCloseMobile={() => setIsSidebarOpen(false)}
+        classicTheme={classicTheme}
+        onToggleTheme={() => setClassicTheme(!classicTheme)}
+        onResetData={handleResetData}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 overflow-x-hidden">
+        {/* Container Frame */}
+        <div
+          className={`max-w-7xl mx-auto rounded-2xl p-3 sm:p-5 border-4 shadow-2xl space-y-4 ${
+            classicTheme
+              ? 'bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 border-amber-800 shadow-amber-950/50'
+              : 'bg-white border-slate-300 shadow-slate-200 text-slate-800'
+          }`}
+        >
+          {/* Header Banner */}
+          <Header
+            activeView={activeView}
+            onSelectView={setActiveView}
+            classicTheme={classicTheme}
+            onToggleTheme={() => setClassicTheme(!classicTheme)}
+            onResetData={handleResetData}
+            currentUser={currentUser}
+            onOpenLogin={() => setShowLoginModal(true)}
+            onLogout={handleLogout}
+            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
 
         {/* User Role Quick Info Banner if Logged In */}
         {currentUser && (
@@ -291,55 +342,20 @@ export default function App() {
         {/* Main Content Area */}
         <main id="main-content" className="print:hidden">
           {activeView === 'dashboard' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Left Column: School Profile Card (5 cols) */}
-              <div className="lg:col-span-5 space-y-3">
-                <SchoolInfoCard
-                  schoolInfo={schoolInfo}
-                  onUpdateSchoolInfo={handleUpdateSchoolInfo}
-                  classicTheme={classicTheme}
-                  currentUser={currentUser}
-                  onOpenLogin={() => setShowLoginModal(true)}
-                />
-
-                {/* Quick Stats Widget */}
-                <div className="bg-amber-100/90 p-3 rounded-xl border-2 border-amber-300 text-xs font-bold space-y-2">
-                  <div className="flex justify-between items-center text-amber-950 border-b border-amber-300 pb-1.5">
-                    <span>STATUS DATA KATEGORISASI</span>
-                    <span className="text-[10px] bg-emerald-700 text-white px-2 py-0.5 rounded font-mono">
-                      ONLINE
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="bg-white p-2 rounded border border-amber-200">
-                      <span className="block text-[10px] text-slate-500">KATEGORI KELAS</span>
-                      <span className="text-base font-black text-amber-900">{classes.length}</span>
-                    </div>
-                    <div className="bg-white p-2 rounded border border-amber-200">
-                      <span className="block text-[10px] text-slate-500">TOTAL SISWA</span>
-                      <span className="text-base font-black text-blue-900">{students.length}</span>
-                    </div>
-                    <div className="bg-white p-2 rounded border border-amber-200">
-                      <span className="block text-[10px] text-slate-500">TOTAL GURU/PTK</span>
-                      <span className="text-base font-black text-emerald-900">{teachers.length}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Column: Bevel Navigation Grid */}
-              <div className="lg:col-span-7">
-                <NavigationGrid
-                  activeView={activeView}
-                  onSelectView={setActiveView}
-                  selectedMonth={selectedMonth}
-                  onSelectMonth={setSelectedMonth}
-                  classicTheme={classicTheme}
-                  currentUser={currentUser}
-                />
-              </div>
-            </div>
+            <DashboardView
+              schoolInfo={schoolInfo}
+              onUpdateSchoolInfo={handleUpdateSchoolInfo}
+              classicTheme={classicTheme}
+              currentUser={currentUser}
+              onOpenLogin={() => setShowLoginModal(true)}
+              classes={classes}
+              students={students}
+              teachers={teachers}
+              activeView={activeView}
+              onSelectView={setActiveView}
+              selectedMonth={selectedMonth}
+              onSelectMonth={setSelectedMonth}
+            />
           )}
 
           {activeView === 'kategori_kelas' && (
@@ -376,6 +392,23 @@ export default function App() {
             />
           )}
 
+          {activeView === 'kartu_siswa' && (
+            <StudentCardView
+              students={students}
+              teachers={teachers}
+              classes={classes}
+              schoolInfo={schoolInfo}
+              selectedKelas={selectedKelas}
+              onSelectKelas={setSelectedKelas}
+              attendanceRecords={attendanceRecords}
+              onSaveAttendance={handleSaveAttendance}
+              onUpdateStudent={handleUpdateStudent}
+              onUpdateTeacher={handleUpdateTeacher}
+              onUpdateSchoolInfo={handleUpdateSchoolInfo}
+              currentUser={currentUser}
+            />
+          )}
+
           {activeView === 'data_siswa' && (
             <StudentData
               students={students}
@@ -384,6 +417,7 @@ export default function App() {
               onAddStudent={handleAddStudent}
               onUpdateStudent={handleUpdateStudent}
               onDeleteStudent={handleDeleteStudent}
+              onImportStudents={handleImportStudents}
               schoolInfo={schoolInfo}
               selectedKelas={selectedKelas}
               onSelectKelas={setSelectedKelas}
@@ -397,6 +431,7 @@ export default function App() {
               onAddTeacher={handleAddTeacher}
               onUpdateTeacher={handleUpdateTeacher}
               onDeleteTeacher={handleDeleteTeacher}
+              onImportTeachers={handleImportTeachers}
               schoolInfo={schoolInfo}
             />
           )}
@@ -462,6 +497,7 @@ export default function App() {
         </footer>
       </div>
     </div>
+  </div>
   );
 }
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewMode, UserAccount } from '../types';
-import { Palette, RotateCcw, Award, User, LogOut, ShieldCheck, UserCheck } from 'lucide-react';
+import { Palette, RotateCcw, Award, User, LogOut, ShieldCheck, UserCheck, Menu } from 'lucide-react';
 
 interface HeaderProps {
   activeView: ViewMode;
@@ -11,6 +11,7 @@ interface HeaderProps {
   currentUser: UserAccount | null;
   onOpenLogin: () => void;
   onLogout: () => void;
+  onToggleSidebar?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   currentUser,
   onOpenLogin,
   onLogout,
+  onToggleSidebar,
 }) => {
   return (
     <header className="print:hidden space-y-2">
@@ -33,8 +35,18 @@ export const Header: React.FC<HeaderProps> = ({
             : 'bg-slate-900 border-slate-700 text-white shadow-slate-900/20'
         }`}
       >
-        {/* Left Tut Wuri Handayani Badge + Title */}
+        {/* Left Tut Wuri Handayani Badge + Sidebar Toggle + Title */}
         <div className="flex items-center gap-3">
+          {onToggleSidebar && (
+            <button
+              onClick={onToggleSidebar}
+              className="lg:hidden p-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-xl shadow border border-amber-200 transition-all flex items-center justify-center"
+              title="Buka / Tutup Sidebar Menu"
+            >
+              <Menu className="w-5 h-5 text-slate-950" />
+            </button>
+          )}
+
           <div className="w-12 h-12 bg-amber-400 border-2 border-amber-200 rounded-full flex items-center justify-center shadow-md p-1.5 text-amber-950 font-black shrink-0">
             {/* Tut Wuri Handayani Symbol / Emblem */}
             <Award className="w-8 h-8 text-emerald-950" />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Teacher, SchoolInfo, ClassCategory } from '../types';
-import { Plus, Edit2, Trash2, Search, UserCheck, Check, X, Award, Clock, CalendarDays, CheckSquare } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, UserCheck, Check, X, Award, Clock, CalendarDays, CheckSquare, Download, Upload, FileSpreadsheet, AlertCircle } from 'lucide-react';
+import { downloadTeacherTemplate, parseTeachersFile, exportTeachersToCSV } from '../utils/templateImporterExporter';
 
 interface TeacherDataProps {
   teachers: Teacher[];
@@ -8,6 +9,7 @@ interface TeacherDataProps {
   onAddTeacher: (teacher: Teacher) => void;
   onUpdateTeacher: (teacher: Teacher) => void;
   onDeleteTeacher: (id: string) => void;
+  onImportTeachers?: (newTeachers: Teacher[], replaceExisting?: boolean) => void;
   schoolInfo: SchoolInfo;
 }
 
@@ -19,11 +21,20 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
   onAddTeacher,
   onUpdateTeacher,
   onDeleteTeacher,
+  onImportTeachers,
   schoolInfo,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
+
+  // Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importedPreview, setImportedPreview] = useState<Teacher[]>([]);
+  const [importFileName, setImportFileName] = useState<string>('');
+  const [replaceExisting, setReplaceExisting] = useState<boolean>(false);
+  const [importError, setImportError] = useState<string>('');
+  const [importSuccessMsg, setImportSuccessMsg] = useState<string>('');
 
   const [formData, setFormData] = useState<Omit<Teacher, 'id'>>({
     nip: '',
@@ -105,6 +116,49 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
     setIsModalOpen(false);
   };
 
+  // Handle File Import
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImportError('');
+    setImportSuccessMsg('');
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const content = evt.target?.result as string;
+        const parsed = parseTeachersFile(content, file.name);
+        if (parsed.length === 0) {
+          setImportError('File kosong atau format kolom tidak sesuai template!');
+          setImportedPreview([]);
+        } else {
+          setImportedPreview(parsed);
+        }
+      } catch (err) {
+        setImportError('Gagal membaca file. Pastikan format CSV / JSON valid.');
+        setImportedPreview([]);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleConfirmImport = () => {
+    if (importedPreview.length === 0) return;
+    if (onImportTeachers) {
+      onImportTeachers(importedPreview, replaceExisting);
+      setImportSuccessMsg(
+        `Berhasil mengimpor ${importedPreview.length} data guru (${replaceExisting ? 'Menggantikan data lama' : 'Menambahkan ke data ada'}).`
+      );
+      setTimeout(() => {
+        setIsImportModalOpen(false);
+        setImportedPreview([]);
+        setImportFileName('');
+        setImportSuccessMsg('');
+      }, 1500);
+    }
+  };
+
   const filteredTeachers = teachers.filter(
     (t) =>
       t.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -115,7 +169,7 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-900 to-teal-900 text-white p-4 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-gradient-to-r from-teal-900 via-emerald-900 to-slate-900 text-white p-4 rounded-xl shadow-md flex flex-wrap items-center justify-between gap-3 border border-teal-700/50">
         <div>
           <h2 className="text-lg font-black tracking-wide flex items-center gap-2">
             <UserCheck className="w-5 h-5 text-emerald-300" /> DATA MASTER GURU & WALI KELAS
@@ -125,12 +179,39 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAdd}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all"
-        >
-          <Plus className="w-4 h-4" /> Tambah Guru Baru
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => downloadTeacherTemplate()}
+            className="px-3 py-2 bg-emerald-700 hover:bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all border border-emerald-500"
+            title="Download file template CSV untuk data guru"
+          >
+            <Download className="w-4 h-4 text-emerald-200" />
+            <span>Download Template</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setImportedPreview([]);
+              setImportFileName('');
+              setImportError('');
+              setImportSuccessMsg('');
+              setIsImportModalOpen(true);
+            }}
+            className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow transition-all border border-amber-400"
+            title="Import data guru dari file CSV/JSON"
+          >
+            <Upload className="w-4 h-4 text-slate-950" />
+            <span>Import Template / CSV</span>
+          </button>
+
+          <button
+            onClick={handleOpenAdd}
+            className="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all border border-teal-400"
+          >
+            <Plus className="w-4 h-4" /> Tambah Guru
+          </button>
+        </div>
       </div>
 
       {/* Toolbar */}
@@ -146,11 +227,21 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
           />
         </div>
 
-        <div className="text-xs font-bold text-slate-600">
-          Total: <span className="text-emerald-800 font-extrabold">{teachers.length} PTK</span> (
-          PNS: {teachers.filter((t) => t.statusPtk === 'PNS').length} | PPPK:{' '}
-          {teachers.filter((t) => t.statusPtk === 'PPPK').length} | Honorer:{' '}
-          {teachers.filter((t) => t.statusPtk === 'GTT' || t.statusPtk === 'Honor').length} )
+        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+          <span>
+            Total: <span className="text-emerald-800 font-extrabold">{teachers.length} PTK</span> (
+            PNS: {teachers.filter((t) => t.statusPtk === 'PNS').length} | PPPK:{' '}
+            {teachers.filter((t) => t.statusPtk === 'PPPK').length} | Honorer:{' '}
+            {teachers.filter((t) => t.statusPtk === 'GTT' || t.statusPtk === 'Honor').length} )
+          </span>
+
+          <button
+            onClick={() => exportTeachersToCSV(filteredTeachers, 'Data_Guru_PTK.csv')}
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 text-[11px] font-bold flex items-center gap-1"
+            title="Ekspor daftar guru ke CSV"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" /> Ekspor CSV
+          </button>
         </div>
       </div>
 
@@ -455,6 +546,142 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Import Data Guru */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-amber-600 to-amber-700 text-slate-950 p-4 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                <Upload className="w-5 h-5 text-slate-950" /> Import Data Guru & PTK dari CSV / Excel / JSON
+              </h3>
+              <button
+                onClick={() => setIsImportModalOpen(false)}
+                className="text-slate-950/80 hover:text-slate-950 font-bold"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-5 space-y-4 text-xs">
+              {/* Instructions */}
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-1 text-slate-800">
+                <p className="font-bold flex items-center gap-1.5 text-amber-900">
+                  <AlertCircle className="w-4 h-4 text-amber-700 shrink-0" /> Petunjuk Import Data Guru:
+                </p>
+                <ol className="list-decimal pl-5 space-y-0.5 text-[11px] text-slate-700">
+                  <li>Unduh file template CSV dengan menekan tombol <strong>Download Template</strong>.</li>
+                  <li>Isi kolom <strong>NIP, Nama Lengkap, Jenis Kelamin (L/P), Jabatan, dan Status PTK</strong>.</li>
+                  <li>Pilih file CSV yang sudah diisi di bawah ini untuk impor otomatis.</li>
+                </ol>
+              </div>
+
+              {/* Upload Input Box */}
+              <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-amber-500 bg-slate-50 transition-all">
+                <input
+                  type="file"
+                  accept=".csv, .json, .txt"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-teacher-upload"
+                />
+                <label
+                  htmlFor="file-teacher-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2"
+                >
+                  <FileSpreadsheet className="w-8 h-8 text-amber-600" />
+                  <span className="font-bold text-slate-800">
+                    {importFileName ? `File Terpilih: ${importFileName}` : 'Klik untuk Pilih File CSV / JSON Data Guru'}
+                  </span>
+                  <span className="text-[10px] text-slate-500">Format yang didukung: .csv (Excel CSV), .json</span>
+                </label>
+              </div>
+
+              {importError && (
+                <div className="bg-rose-50 border border-rose-300 text-rose-800 p-3 rounded-xl font-bold text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" /> {importError}
+                </div>
+              )}
+
+              {importSuccessMsg && (
+                <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 p-3 rounded-xl font-bold text-xs flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> {importSuccessMsg}
+                </div>
+              )}
+
+              {/* Preview Table */}
+              {importedPreview.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                      Pratinjau Data Impor ({importedPreview.length} Guru)
+                    </span>
+                    <label className="flex items-center gap-2 text-slate-700 font-semibold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={replaceExisting}
+                        onChange={(e) => setReplaceExisting(e.target.checked)}
+                        className="rounded text-amber-600 focus:ring-amber-500"
+                      />
+                      <span>Gantikan seluruh data guru yang ada</span>
+                    </label>
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto border rounded-xl border-slate-200">
+                    <table className="w-full text-left text-[11px]">
+                      <thead className="bg-slate-100 font-extrabold text-slate-700 sticky top-0">
+                        <tr>
+                          <th className="p-2 border-b">No</th>
+                          <th className="p-2 border-b">NIP</th>
+                          <th className="p-2 border-b">Nama Lengkap</th>
+                          <th className="p-2 border-b">L/P</th>
+                          <th className="p-2 border-b">Jabatan</th>
+                          <th className="p-2 border-b">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {importedPreview.map((t, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="p-2 font-mono">{idx + 1}</td>
+                            <td className="p-2 font-mono font-bold text-teal-900">{t.nip}</td>
+                            <td className="p-2 font-bold text-slate-900">{t.nama}</td>
+                            <td className="p-2 font-bold">{t.jenisKelamin}</td>
+                            <td className="p-2">{t.jabatan}</td>
+                            <td className="p-2">{t.statusPtk}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Submit / Cancel Buttons */}
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmImport}
+                  disabled={importedPreview.length === 0}
+                  className={`px-5 py-2 rounded-xl font-black text-xs flex items-center gap-1.5 shadow transition-all ${
+                    importedPreview.length > 0
+                      ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer'
+                      : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Check className="w-4 h-4" /> Impor {importedPreview.length} Data Guru
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
