@@ -77,7 +77,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     } else if (
       activeView === 'data_siswa' ||
       activeView === 'data_guru' ||
-      activeView === 'kategori_kelas'
+      activeView === 'kategori_kelas' ||
+      activeView === 'migrasi_kelas'
     ) {
       setOpenGroups((prev) => ({ ...prev, datamaster: true }));
     } else if (

@@ -41,12 +41,12 @@ function detectDelimiter(headerLine: string): string {
  * DOWNLOAD TEMPLATE SISWA (CSV with UTF-8 BOM for Excel)
  */
 export function downloadStudentTemplate() {
-  const headers = ['NIS', 'NISN', 'Nama Lengkap', 'Jenis Kelamin', 'Kelas'];
+  const headers = ['NIS', 'NISN', 'Nama Lengkap', 'Jenis Kelamin', 'Kelas', 'NIK', 'Tempat Lahir', 'Tanggal Lahir', 'Alamat', 'Nama Orang Tua', 'No HP Ortua', 'Agama'];
   const sampleRows = [
-    ['1001', '0123456701', 'Ahmad Rizky Pratama', 'L', 'Kelas I'],
-    ['1002', '0123456702', 'Siti Nur Aisyah', 'P', 'Kelas I'],
-    ['1003', '0123456703', 'Muhammad Fikri', 'L', 'Kelas II'],
-    ['1004', '0123456704', 'Zahra Amelia', 'P', 'Kelas III'],
+    ['1001', '0123456701', 'Ahmad Rizky Pratama', 'L', 'Kelas I', '6311011205170001', 'Balangan', '2017-05-12', 'Jl. Bhayangkara No. 12', 'Budi Santoso', '081255551234', 'Islam'],
+    ['1002', '0123456702', 'Siti Nur Aisyah', 'P', 'Kelas I', '6311016008170002', 'Paringin', '2017-08-20', 'Komp. Garatama No. 05', 'Rahmadi', '081344445678', 'Islam'],
+    ['1003', '0123456703', 'Muhammad Fikri', 'L', 'Kelas II', '6311011402170003', 'Amuntai', '2017-02-14', 'Jl. Pemuda No. 18', 'Subhan Prasetyo', '085211112233', 'Islam'],
+    ['1004', '0123456704', 'Zahra Amelia', 'P', 'Kelas III', '6311014311170004', 'Balangan', '2017-11-03', 'Desa Batu Piring RT 02', 'Fauzi Safitri', '085388889900', 'Islam'],
   ];
 
   const csvContent = [
@@ -75,6 +75,15 @@ export function downloadTeacherTemplate() {
     'Jenis Kelamin',
     'Jabatan',
     'Status PTK',
+    'NIK',
+    'NUPTK',
+    'Tempat Lahir',
+    'Tanggal Lahir',
+    'Alamat',
+    'No HP',
+    'Email',
+    'Agama',
+    'Pendidikan Terakhir',
     'Hari Wajib Masuk',
     'Jam Wajib Masuk',
     'Keterangan Jadwal',
@@ -86,6 +95,15 @@ export function downloadTeacherTemplate() {
       'P',
       'Guru Kelas',
       'PNS',
+      '6311015001850003',
+      '1234763664200004',
+      'Barabai',
+      '1985-01-10',
+      'Komp. Garatama Blok A No. 12',
+      '081349876543',
+      'sri.rahayu@gmail.com',
+      'Islam',
+      'S1 PGSD',
       'Senin, Selasa, Rabu, Kamis, Sabtu, Ahad',
       '07:15',
       'Wajib 6 Hari',
@@ -96,16 +114,15 @@ export function downloadTeacherTemplate() {
       'P',
       'Guru Kelas',
       'PPPK',
-      'Senin, Selasa, Rabu, Kamis, Sabtu, Ahad',
-      '07:15',
-      'Wajib 6 Hari',
-    ],
-    [
-      '19850610 201001 1 003',
-      'M. Zaini, S.Pd.I',
-      'L',
-      'Guru PAI & BP',
-      'PNS',
+      '6311016203890004',
+      '5678762661200005',
+      'Paringin',
+      '1989-03-22',
+      'Jl. Bhayangkara No. 45',
+      '085387654321',
+      'nurul.hidayah@gmail.com',
+      'Islam',
+      'S1 PGSD',
       'Senin, Selasa, Rabu, Kamis, Sabtu, Ahad',
       '07:15',
       'Wajib 6 Hari',
@@ -141,6 +158,13 @@ export function parseStudentsFile(fileContent: string, fileName: string): Studen
         nama: String(item.nama || item.name || 'Tanpa Nama'),
         jenisKelamin: item.jenisKelamin?.toUpperCase().startsWith('P') ? 'P' : 'L',
         kelas: String(item.kelas || 'Kelas I'),
+        alamat: item.alamat || '',
+        tempatLahir: item.tempatLahir || '',
+        tanggalLahir: item.tanggalLahir || '',
+        namaOrangTua: item.namaOrangTua || item.namaOrtu || '',
+        noHpOrtu: item.noHpOrtu || item.noHp || '',
+        agama: item.agama || 'Islam',
+        nik: item.nik || '',
       }));
     }
     return [];
@@ -157,11 +181,18 @@ export function parseStudentsFile(fileContent: string, fileName: string): Studen
 
   const nisIdx = headers.findIndex((h) => h.includes('nis') && !h.includes('nisn'));
   const nisnIdx = headers.findIndex((h) => h.includes('nisn'));
-  const namaIdx = headers.findIndex((h) => h.includes('nama'));
+  const namaIdx = headers.findIndex((h) => h.includes('nama') && !h.includes('orang') && !h.includes('ortu'));
   const jkIdx = headers.findIndex(
     (h) => h.includes('jenis') || h.includes('kelamin') || h.includes('jk') || h.includes('l/p')
   );
   const kelasIdx = headers.findIndex((h) => h.includes('kelas') || h.includes('kategori'));
+  const nikIdx = headers.findIndex((h) => h.includes('nik'));
+  const tempatIdx = headers.findIndex((h) => h.includes('tempat'));
+  const tglIdx = headers.findIndex((h) => h.includes('tanggal') || h.includes('tgl'));
+  const alamatIdx = headers.findIndex((h) => h.includes('alamat'));
+  const ortuIdx = headers.findIndex((h) => h.includes('orang') || h.includes('ortu') || h.includes('wali'));
+  const hpIdx = headers.findIndex((h) => h.includes('hp') || h.includes('wa') || h.includes('telepon'));
+  const agamaIdx = headers.findIndex((h) => h.includes('agama'));
 
   const parsedStudents: Student[] = [];
 
@@ -174,6 +205,13 @@ export function parseStudentsFile(fileContent: string, fileName: string): Studen
     const nama = namaIdx !== -1 ? cols[namaIdx]?.replace(/['"]/g, '') || '' : '';
     const jkRaw = jkIdx !== -1 ? cols[jkIdx]?.replace(/['"]/g, '').toUpperCase() || 'L' : 'L';
     const kelas = kelasIdx !== -1 ? cols[kelasIdx]?.replace(/['"]/g, '') || 'Kelas I' : 'Kelas I';
+    const nik = nikIdx !== -1 ? cols[nikIdx]?.replace(/['"]/g, '') || '' : '';
+    const tempatLahir = tempatIdx !== -1 ? cols[tempatIdx]?.replace(/['"]/g, '') || '' : '';
+    const tanggalLahir = tglIdx !== -1 ? cols[tglIdx]?.replace(/['"]/g, '') || '' : '';
+    const alamat = alamatIdx !== -1 ? cols[alamatIdx]?.replace(/['"]/g, '') || '' : '';
+    const namaOrangTua = ortuIdx !== -1 ? cols[ortuIdx]?.replace(/['"]/g, '') || '' : '';
+    const noHpOrtu = hpIdx !== -1 ? cols[hpIdx]?.replace(/['"]/g, '') || '' : '';
+    const agama = agamaIdx !== -1 ? cols[agamaIdx]?.replace(/['"]/g, '') || 'Islam' : 'Islam';
 
     if (nama.trim().length > 0) {
       parsedStudents.push({
@@ -183,6 +221,13 @@ export function parseStudentsFile(fileContent: string, fileName: string): Studen
         nama: nama.trim(),
         jenisKelamin: jkRaw.startsWith('P') || jkRaw.startsWith('W') ? 'P' : 'L',
         kelas: kelas.trim() || 'Kelas I',
+        nik: nik.trim(),
+        tempatLahir: tempatLahir.trim(),
+        tanggalLahir: tanggalLahir.trim(),
+        alamat: alamat.trim(),
+        namaOrangTua: namaOrangTua.trim(),
+        noHpOrtu: noHpOrtu.trim(),
+        agama: agama.trim() || 'Islam',
       });
     }
   }
@@ -204,6 +249,15 @@ export function parseTeachersFile(fileContent: string, fileName: string): Teache
         jenisKelamin: item.jenisKelamin?.toUpperCase().startsWith('P') ? 'P' : 'L',
         jabatan: String(item.jabatan || 'Guru Kelas'),
         statusPtk: (item.statusPtk || item.status || 'PNS') as any,
+        nik: item.nik || '',
+        nuptk: item.nuptk || '',
+        alamat: item.alamat || '',
+        tempatLahir: item.tempatLahir || '',
+        tanggalLahir: item.tanggalLahir || '',
+        noHp: item.noHp || '',
+        email: item.email || '',
+        agama: item.agama || 'Islam',
+        pendidikanTerakhir: item.pendidikanTerakhir || 'S1',
         hariWajib: Array.isArray(item.hariWajib)
           ? item.hariWajib
           : ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Sabtu', 'Ahad'],
@@ -223,13 +277,22 @@ export function parseTeachersFile(fileContent: string, fileName: string): Teache
     h.toLowerCase().trim().replace(/['"]/g, '')
   );
 
-  const nipIdx = headers.findIndex((h) => h.includes('nip'));
+  const nipIdx = headers.findIndex((h) => h.includes('nip') && !h.includes('nuptk'));
   const namaIdx = headers.findIndex((h) => h.includes('nama'));
   const jkIdx = headers.findIndex(
     (h) => h.includes('jenis') || h.includes('kelamin') || h.includes('jk') || h.includes('l/p')
   );
   const jabatanIdx = headers.findIndex((h) => h.includes('jabatan'));
   const statusIdx = headers.findIndex((h) => h.includes('status') || h.includes('ptk'));
+  const nikIdx = headers.findIndex((h) => h.includes('nik'));
+  const nuptkIdx = headers.findIndex((h) => h.includes('nuptk'));
+  const tempatIdx = headers.findIndex((h) => h.includes('tempat'));
+  const tglIdx = headers.findIndex((h) => h.includes('tanggal') || h.includes('tgl'));
+  const alamatIdx = headers.findIndex((h) => h.includes('alamat'));
+  const hpIdx = headers.findIndex((h) => h.includes('hp') || h.includes('wa') || h.includes('telepon'));
+  const emailIdx = headers.findIndex((h) => h.includes('email'));
+  const agamaIdx = headers.findIndex((h) => h.includes('agama'));
+  const pendIdx = headers.findIndex((h) => h.includes('pendidikan'));
   const hariIdx = headers.findIndex((h) => h.includes('hari'));
   const jamIdx = headers.findIndex((h) => h.includes('jam'));
   const ketIdx = headers.findIndex((h) => h.includes('keterangan') || h.includes('jadwal'));
@@ -245,6 +308,15 @@ export function parseTeachersFile(fileContent: string, fileName: string): Teache
     const jkRaw = jkIdx !== -1 ? cols[jkIdx]?.replace(/['"]/g, '').toUpperCase() || 'L' : 'L';
     const jabatan = jabatanIdx !== -1 ? cols[jabatanIdx]?.replace(/['"]/g, '') || 'Guru Kelas' : 'Guru Kelas';
     const statusPtk = statusIdx !== -1 ? cols[statusIdx]?.replace(/['"]/g, '') || 'PNS' : 'PNS';
+    const nik = nikIdx !== -1 ? cols[nikIdx]?.replace(/['"]/g, '') || '' : '';
+    const nuptk = nuptkIdx !== -1 ? cols[nuptkIdx]?.replace(/['"]/g, '') || '' : '';
+    const tempatLahir = tempatIdx !== -1 ? cols[tempatIdx]?.replace(/['"]/g, '') || '' : '';
+    const tanggalLahir = tglIdx !== -1 ? cols[tglIdx]?.replace(/['"]/g, '') || '' : '';
+    const alamat = alamatIdx !== -1 ? cols[alamatIdx]?.replace(/['"]/g, '') || '' : '';
+    const noHp = hpIdx !== -1 ? cols[hpIdx]?.replace(/['"]/g, '') || '' : '';
+    const email = emailIdx !== -1 ? cols[emailIdx]?.replace(/['"]/g, '') || '' : '';
+    const agama = agamaIdx !== -1 ? cols[agamaIdx]?.replace(/['"]/g, '') || 'Islam' : 'Islam';
+    const pendidikanTerakhir = pendIdx !== -1 ? cols[pendIdx]?.replace(/['"]/g, '') || '' : '';
     const hariRaw = hariIdx !== -1 ? cols[hariIdx]?.replace(/['"]/g, '') || '' : '';
     const jamWajibMasuk = jamIdx !== -1 ? cols[jamIdx]?.replace(/['"]/g, '') || '07:15' : '07:15';
     const keteranganJadwal = ketIdx !== -1 ? cols[ketIdx]?.replace(/['"]/g, '') || 'Wajib 6 Hari' : 'Wajib 6 Hari';
@@ -268,6 +340,15 @@ export function parseTeachersFile(fileContent: string, fileName: string): Teache
         jenisKelamin: jkRaw.startsWith('P') || jkRaw.startsWith('W') ? 'P' : 'L',
         jabatan: jabatan || 'Guru Kelas',
         statusPtk: (statusPtk as any) || 'PNS',
+        nik: nik.trim(),
+        nuptk: nuptk.trim(),
+        tempatLahir: tempatLahir.trim(),
+        tanggalLahir: tanggalLahir.trim(),
+        alamat: alamat.trim(),
+        noHp: noHp.trim(),
+        email: email.trim(),
+        agama: agama.trim() || 'Islam',
+        pendidikanTerakhir: pendidikanTerakhir.trim() || 'S1',
         hariWajib,
         jamWajibMasuk: jamWajibMasuk || '07:15',
         keteranganJadwal: keteranganJadwal || 'Wajib 6 Hari',
@@ -282,8 +363,21 @@ export function parseTeachersFile(fileContent: string, fileName: string): Teache
  * EXPORT EXISTING STUDENTS TO CSV
  */
 export function exportStudentsToCSV(students: Student[], filename: string = 'Data_Siswa.csv') {
-  const headers = ['NIS', 'NISN', 'Nama Lengkap', 'Jenis Kelamin', 'Kelas'];
-  const rows = students.map((s) => [s.nis, s.nisn, s.nama, s.jenisKelamin, s.kelas]);
+  const headers = ['NIS', 'NISN', 'Nama Lengkap', 'Jenis Kelamin', 'Kelas', 'NIK', 'Tempat Lahir', 'Tanggal Lahir', 'Alamat', 'Nama Orang Tua', 'No HP Ortua', 'Agama'];
+  const rows = students.map((s) => [
+    s.nis,
+    s.nisn,
+    s.nama,
+    s.jenisKelamin,
+    s.kelas,
+    s.nik || '',
+    s.tempatLahir || '',
+    s.tanggalLahir || '',
+    s.alamat || '',
+    s.namaOrangTua || '',
+    s.noHpOrtu || '',
+    s.agama || '',
+  ]);
 
   const csvContent = [
     headers.join(','),
@@ -310,6 +404,15 @@ export function exportTeachersToCSV(teachers: Teacher[], filename: string = 'Dat
     'Jenis Kelamin',
     'Jabatan',
     'Status PTK',
+    'NIK',
+    'NUPTK',
+    'Tempat Lahir',
+    'Tanggal Lahir',
+    'Alamat',
+    'No HP',
+    'Email',
+    'Agama',
+    'Pendidikan Terakhir',
     'Hari Wajib Masuk',
     'Jam Wajib Masuk',
     'Keterangan Jadwal',
@@ -320,6 +423,15 @@ export function exportTeachersToCSV(teachers: Teacher[], filename: string = 'Dat
     t.jenisKelamin,
     t.jabatan,
     t.statusPtk,
+    t.nik || '',
+    t.nuptk || '',
+    t.tempatLahir || '',
+    t.tanggalLahir || '',
+    t.alamat || '',
+    t.noHp || '',
+    t.email || '',
+    t.agama || '',
+    t.pendidikanTerakhir || '',
     (t.hariWajib || []).join(', '),
     t.jamWajibMasuk || '07:15',
     t.keteranganJadwal || 'Wajib 6 Hari',

@@ -55,6 +55,29 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState<'identitas' | 'pengguna' | 'gambar'>('identitas');
   const [formData, setFormData] = useState<SchoolInfo>(schoolInfo);
+  const [newYearInput, setNewYearInput] = useState('');
+  const [showAddYearInput, setShowAddYearInput] = useState(false);
+
+  const handleAddYear = () => {
+    if (!newYearInput.trim()) return;
+    const currentList = formData.daftarTahunPelajaran || ['2023 / 2024', '2024 / 2025', '2025 / 2026', '2026 / 2027', '2027 / 2028'];
+    const formatted = newYearInput.trim();
+    if (!currentList.includes(formatted)) {
+      const updatedList = [...currentList, formatted];
+      setFormData((prev) => ({
+        ...prev,
+        tahunPelajaran: formatted,
+        daftarTahunPelajaran: updatedList,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        tahunPelajaran: formatted,
+      }));
+    }
+    setNewYearInput('');
+    setShowAddYearInput(false);
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -187,9 +210,33 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1">
+                <span className="font-bold text-slate-700">KEC / KAB / PROV</span>
+                <span className="col-span-2 font-semibold text-slate-900 truncate">
+                  : {schoolInfo.kecamatan ? `Kec. ${schoolInfo.kecamatan}, ` : ''}{schoolInfo.kabupatenKota}{schoolInfo.provinsi ? `, ${schoolInfo.provinsi}` : ''}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
                 <span className="font-bold text-slate-700">SEMESTER / THN</span>
-                <span className="col-span-2 font-bold text-slate-900">
-                  : {schoolInfo.semester} ({schoolInfo.tahunPelajaran})
+                <span className="col-span-2 font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
+                  : {schoolInfo.semester} (
+                  <select
+                    value={schoolInfo.tahunPelajaran}
+                    onChange={(e) => {
+                      onUpdateSchoolInfo({
+                        ...schoolInfo,
+                        tahunPelajaran: e.target.value,
+                      });
+                    }}
+                    className="bg-amber-200/80 hover:bg-amber-300 text-emerald-950 font-black px-2 py-0.5 rounded border border-amber-400 cursor-pointer text-xs"
+                    title="Ganti Tahun Pelajaran Aktif"
+                  >
+                    {(schoolInfo.daftarTahunPelajaran || ['2023 / 2024', '2024 / 2025', '2025 / 2026', '2026 / 2027', '2027 / 2028']).map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                  )
                 </span>
               </div>
             </div>
@@ -374,6 +421,27 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                     </div>
 
                     <div>
+                      <label className="block font-bold text-slate-700 mb-1">Kabupaten / Kota</label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
+                        value={formData.kabupatenKota}
+                        onChange={(e) => setFormData({ ...formData, kabupatenKota: e.target.value })}
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Provinsi</label>
+                      <input
+                        type="text"
+                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500"
+                        value={formData.provinsi}
+                        onChange={(e) => setFormData({ ...formData, provinsi: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
                       <label className="block font-bold text-slate-700 mb-1">Semester</label>
                       <select
                         className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -386,13 +454,47 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Tahun Pelajaran</label>
-                      <input
-                        type="text"
-                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
-                        value={formData.tahunPelajaran}
-                        onChange={(e) => setFormData({ ...formData, tahunPelajaran: e.target.value })}
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block font-bold text-slate-700">Tahun Pelajaran</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowAddYearInput(!showAddYearInput)}
+                          className="text-[10px] font-bold text-emerald-700 hover:text-emerald-900 underline"
+                        >
+                          {showAddYearInput ? 'Batal' : '+ Tambah Tahun'}
+                        </button>
+                      </div>
+
+                      {showAddYearInput ? (
+                        <div className="flex gap-1">
+                          <input
+                            type="text"
+                            placeholder="e.g. 2026 / 2027"
+                            className="flex-1 p-2 border rounded-lg border-emerald-400 font-bold text-xs"
+                            value={newYearInput}
+                            onChange={(e) => setNewYearInput(e.target.value)}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddYear}
+                            className="px-2.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-bold"
+                          >
+                            Tambah
+                          </button>
+                        </div>
+                      ) : (
+                        <select
+                          className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
+                          value={formData.tahunPelajaran}
+                          onChange={(e) => setFormData({ ...formData, tahunPelajaran: e.target.value })}
+                        >
+                          {(formData.daftarTahunPelajaran || ['2023 / 2024', '2024 / 2025', '2025 / 2026', '2026 / 2027', '2027 / 2028']).map((yr) => (
+                            <option key={yr} value={yr}>
+                              {yr}
+                            </option>
+                          ))}
+                        </select>
+                      )}
                     </div>
                   </div>
 

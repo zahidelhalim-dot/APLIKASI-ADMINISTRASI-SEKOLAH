@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Student, SchoolInfo, ClassCategory, Teacher } from '../types';
 import { ClassFilterBar } from './ClassFilterBar';
-import { Plus, Edit2, Trash2, Search, Users, Check, X, Download, Upload, FileSpreadsheet, FileText, AlertCircle, RefreshCw } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Users, Check, X, Download, Upload, FileSpreadsheet, FileText, AlertCircle, Eye, Phone, MapPin, User, Calendar, Hash } from 'lucide-react';
 import { downloadStudentTemplate, parseStudentsFile, exportStudentsToCSV } from '../utils/templateImporterExporter';
 
 interface StudentDataProps {
@@ -32,6 +32,7 @@ export const StudentData: React.FC<StudentDataProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [viewingDetailStudent, setViewingDetailStudent] = useState<Student | null>(null);
 
   // Import Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -44,9 +45,16 @@ export const StudentData: React.FC<StudentDataProps> = ({
   const [formData, setFormData] = useState<Omit<Student, 'id'>>({
     nis: '',
     nisn: '',
+    nik: '',
     nama: '',
     jenisKelamin: 'L',
     kelas: selectedKelas !== 'SEMUA' ? selectedKelas : classes[0]?.namaKelas || 'Kelas I',
+    tempatLahir: '',
+    tanggalLahir: '',
+    alamat: '',
+    namaOrangTua: '',
+    noHpOrtu: '',
+    agama: 'Islam',
   });
 
   const handleOpenAdd = () => {
@@ -54,9 +62,16 @@ export const StudentData: React.FC<StudentDataProps> = ({
     setFormData({
       nis: String(1000 + students.length + 1),
       nisn: `01234567${String(students.length + 1).padStart(2, '0')}`,
+      nik: '',
       nama: '',
       jenisKelamin: 'L',
       kelas: selectedKelas !== 'SEMUA' ? selectedKelas : classes[0]?.namaKelas || 'Kelas I',
+      tempatLahir: '',
+      tanggalLahir: '',
+      alamat: '',
+      namaOrangTua: '',
+      noHpOrtu: '',
+      agama: 'Islam',
     });
     setIsModalOpen(true);
   };
@@ -66,9 +81,16 @@ export const StudentData: React.FC<StudentDataProps> = ({
     setFormData({
       nis: student.nis,
       nisn: student.nisn,
+      nik: student.nik || '',
       nama: student.nama,
       jenisKelamin: student.jenisKelamin,
       kelas: student.kelas,
+      tempatLahir: student.tempatLahir || '',
+      tanggalLahir: student.tanggalLahir || '',
+      alamat: student.alamat || '',
+      namaOrangTua: student.namaOrangTua || '',
+      noHpOrtu: student.noHpOrtu || '',
+      agama: student.agama || 'Islam',
     });
     setIsModalOpen(true);
   };
@@ -235,13 +257,13 @@ export const StudentData: React.FC<StudentDataProps> = ({
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-800 text-white uppercase font-bold text-[11px] tracking-wider">
               <tr>
-                <th className="py-3 px-3 text-center w-12">No</th>
-                <th className="py-3 px-3 w-24">NIS</th>
-                <th className="py-3 px-3 w-32">NISN</th>
-                <th className="py-3 px-3">Nama Lengkap</th>
-                <th className="py-3 px-3 text-center w-20">L/P</th>
-                <th className="py-3 px-3 text-center w-32">Kategori Kelas</th>
-                <th className="py-3 px-3 text-center w-24">Aksi</th>
+                <th className="py-3 px-3 text-center w-10">No</th>
+                <th className="py-3 px-3 w-28">NIS / NISN</th>
+                <th className="py-3 px-3">Nama Lengkap Siswa</th>
+                <th className="py-3 px-3 text-center w-12">L/P</th>
+                <th className="py-3 px-3 w-28 text-center">Kategori Kelas</th>
+                <th className="py-3 px-3 w-48">Orang Tua & No. HP</th>
+                <th className="py-3 px-3 text-center w-28">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
@@ -255,20 +277,45 @@ export const StudentData: React.FC<StudentDataProps> = ({
                 filteredStudents.map((s, index) => (
                   <tr key={s.id} className="hover:bg-slate-50 transition-colors">
                     <td className="py-2.5 px-3 text-center font-bold text-slate-600">{index + 1}</td>
-                    <td className="py-2.5 px-3 font-mono text-slate-800">{s.nis}</td>
-                    <td className="py-2.5 px-3 font-mono text-slate-700">{s.nisn}</td>
-                    <td className="py-2.5 px-3 font-bold text-slate-900">{s.nama}</td>
+                    <td className="py-2.5 px-3 font-mono">
+                      <div className="text-blue-900 font-bold">{s.nis}</div>
+                      <div className="text-[10px] text-slate-500">{s.nisn}</div>
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <div className="font-bold text-slate-900">{s.nama}</div>
+                      {(s.tempatLahir || s.tanggalLahir) && (
+                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>{s.tempatLahir ? `${s.tempatLahir}, ` : ''}{s.tanggalLahir || '-'}</span>
+                        </div>
+                      )}
+                    </td>
                     <td className="py-2.5 px-3 text-center font-semibold">{s.jenisKelamin}</td>
                     <td className="py-2.5 px-3 text-center">
                       <span className="bg-emerald-100 text-emerald-950 font-black px-2.5 py-1 rounded border border-emerald-300 text-[11px]">
                         {s.kelas}
                       </span>
                     </td>
+                    <td className="py-2.5 px-3">
+                      <div className="font-bold text-slate-800">{s.namaOrangTua || '-'}</div>
+                      {s.noHpOrtu && (
+                        <div className="text-[10px] text-emerald-700 font-mono font-bold flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-emerald-600 shrink-0" /> {s.noHpOrtu}
+                        </div>
+                      )}
+                    </td>
                     <td className="py-2.5 px-3 text-center">
                       <div className="flex items-center justify-center gap-1">
                         <button
+                          onClick={() => setViewingDetailStudent(s)}
+                          className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-200"
+                          title="Lihat Detail Lengkap Siswa"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={() => handleOpenEdit(s)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
                           title="Edit"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -279,7 +326,7 @@ export const StudentData: React.FC<StudentDataProps> = ({
                               onDeleteStudent(s.id);
                             }
                           }}
-                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded"
+                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
                           title="Hapus"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -294,14 +341,109 @@ export const StudentData: React.FC<StudentDataProps> = ({
         </div>
       </div>
 
+      {/* Detail View Modal */}
+      {viewingDetailStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-4 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                <User className="w-5 h-5 text-blue-300" /> Detail Lengkap Data Siswa
+              </h3>
+              <button
+                onClick={() => setViewingDetailStudent(null)}
+                className="text-white/80 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-black text-blue-950">{viewingDetailStudent.nama}</h4>
+                  <p className="text-slate-600 font-medium text-[11px] mt-0.5">
+                    NIS: <span className="font-mono font-bold text-blue-900">{viewingDetailStudent.nis}</span> | NISN: <span className="font-mono font-bold text-blue-900">{viewingDetailStudent.nisn}</span>
+                  </p>
+                </div>
+                <span className="bg-blue-900 text-white font-extrabold px-3 py-1 rounded-lg text-xs shadow">
+                  {viewingDetailStudent.kelas}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 text-slate-800">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">NIK (Nomor Induk Kependudukan)</span>
+                  <p className="font-mono font-extrabold text-slate-900">{viewingDetailStudent.nik || '-'}</p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Jenis Kelamin / Agama</span>
+                  <p className="font-bold text-slate-900">
+                    {viewingDetailStudent.jenisKelamin === 'L' ? 'Laki-laki (L)' : 'Perempuan (P)'} — {viewingDetailStudent.agama || 'Islam'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Tempat & Tanggal Lahir</span>
+                  <p className="font-bold text-slate-900">
+                    {viewingDetailStudent.tempatLahir ? `${viewingDetailStudent.tempatLahir}, ` : ''}{viewingDetailStudent.tanggalLahir || '-'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">No. HP / WA Orang Tua</span>
+                  <p className="font-mono font-extrabold text-emerald-800 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-emerald-600" /> {viewingDetailStudent.noHpOrtu || '-'}
+                  </p>
+                </div>
+
+                <div className="col-span-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Nama Orang Tua / Wali</span>
+                  <p className="font-extrabold text-slate-900">{viewingDetailStudent.namaOrangTua || '-'}</p>
+                </div>
+
+                <div className="col-span-2 p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Alamat Tempat Tinggal</span>
+                  <p className="font-bold text-slate-900 flex items-start gap-1">
+                    <MapPin className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    <span>{viewingDetailStudent.alamat || '-'}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const studentToEdit = viewingDetailStudent;
+                    setViewingDetailStudent(null);
+                    handleOpenEdit(studentToEdit);
+                  }}
+                  className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white font-bold rounded-xl flex items-center gap-1.5 shadow"
+                >
+                  <Edit2 className="w-4 h-4" /> Edit Data Ini
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewingDetailStudent(null)}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 font-bold text-slate-800 rounded-xl"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add / Edit Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-200">
-            <div className="bg-blue-900 text-white p-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 my-6 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white p-4 flex items-center justify-between">
               <h3 className="font-bold text-sm flex items-center gap-2">
-                <Users className="w-4 h-4" />{' '}
-                {editingStudent ? 'Edit Data Siswa' : 'Tambah Siswa Baru'}
+                <Users className="w-4 h-4 text-blue-300" />{' '}
+                {editingStudent ? 'Edit Data Detail Siswa' : 'Tambah Siswa Baru dengan Detail'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -311,70 +453,172 @@ export const StudentData: React.FC<StudentDataProps> = ({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-4 space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-700 mb-1">Nama Lengkap Siswa</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.nama}
-                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
-                  placeholder="Contoh: AHMAD FADILLAH"
-                  className="w-full p-2 border rounded border-slate-300 focus:ring-2 focus:ring-blue-500 uppercase font-semibold text-slate-900"
-                />
-              </div>
+            <form onSubmit={handleSubmit} className="p-5 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
+              {/* Bagian 1: Informasi Utama */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <span className="font-extrabold text-blue-900 text-[11px] uppercase tracking-wider block border-b border-slate-200 pb-1">
+                  1. Informasi Identitas Utama
+                </span>
 
-              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">NIS</label>
+                  <label className="block font-bold text-slate-700 mb-1">Nama Lengkap Siswa *</label>
                   <input
                     type="text"
                     required
-                    value={formData.nis}
-                    onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
-                    className="w-full p-2 border rounded border-slate-300 font-mono text-slate-900"
+                    value={formData.nama}
+                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                    placeholder="Contoh: AHMAD FADILLAH"
+                    className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-blue-500 uppercase font-bold text-slate-900"
                   />
                 </div>
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">NISN</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.nisn}
-                    onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
-                    className="w-full p-2 border rounded border-slate-300 font-mono text-slate-900"
-                  />
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">NIS *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.nis}
+                      onChange={(e) => setFormData({ ...formData, nis: e.target.value })}
+                      className="w-full p-2 border rounded-lg border-slate-300 font-mono text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">NISN *</label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.nisn}
+                      onChange={(e) => setFormData({ ...formData, nisn: e.target.value })}
+                      className="w-full p-2 border rounded-lg border-slate-300 font-mono text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">NIK (KTP/KK)</label>
+                    <input
+                      type="text"
+                      value={formData.nik || ''}
+                      onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
+                      placeholder="63110..."
+                      className="w-full p-2 border rounded-lg border-slate-300 font-mono text-slate-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Jenis Kelamin</label>
+                    <select
+                      value={formData.jenisKelamin}
+                      onChange={(e) =>
+                        setFormData({ ...formData, jenisKelamin: e.target.value as 'L' | 'P' })
+                      }
+                      className="w-full p-2 border rounded-lg border-slate-300 font-semibold text-slate-900"
+                    >
+                      <option value="L">Laki-laki (L)</option>
+                      <option value="P">Perempuan (P)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Kategori Kelas</label>
+                    <select
+                      value={formData.kelas}
+                      onChange={(e) => setFormData({ ...formData, kelas: e.target.value })}
+                      className="w-full p-2 border rounded-lg border-slate-300 font-bold text-slate-900"
+                    >
+                      {classes.map((c) => (
+                        <option key={c.id} value={c.namaKelas}>
+                          {c.namaKelas}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block font-bold text-slate-700 mb-1">Jenis Kelamin</label>
-                  <select
-                    value={formData.jenisKelamin}
-                    onChange={(e) =>
-                      setFormData({ ...formData, jenisKelamin: e.target.value as 'L' | 'P' })
-                    }
-                    className="w-full p-2 border rounded border-slate-300 font-semibold text-slate-900"
-                  >
-                    <option value="L">Laki-laki (L)</option>
-                    <option value="P">Perempuan (P)</option>
-                  </select>
+              {/* Bagian 2: Tempat Tanggal Lahir & Agama */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <span className="font-extrabold text-blue-900 text-[11px] uppercase tracking-wider block border-b border-slate-200 pb-1">
+                  2. Kelahiran & Agama
+                </span>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Tempat Lahir</label>
+                    <input
+                      type="text"
+                      value={formData.tempatLahir || ''}
+                      onChange={(e) => setFormData({ ...formData, tempatLahir: e.target.value })}
+                      placeholder="Contoh: Balangan"
+                      className="w-full p-2 border rounded-lg border-slate-300 text-slate-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Tanggal Lahir</label>
+                    <input
+                      type="date"
+                      value={formData.tanggalLahir || ''}
+                      onChange={(e) => setFormData({ ...formData, tanggalLahir: e.target.value })}
+                      className="w-full p-2 border rounded-lg border-slate-300 text-slate-900 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Agama</label>
+                    <select
+                      value={formData.agama || 'Islam'}
+                      onChange={(e) => setFormData({ ...formData, agama: e.target.value })}
+                      className="w-full p-2 border rounded-lg border-slate-300 font-medium text-slate-900"
+                    >
+                      <option value="Islam">Islam</option>
+                      <option value="Kristen">Kristen</option>
+                      <option value="Katolik">Katolik</option>
+                      <option value="Hindu">Hindu</option>
+                      <option value="Buddha">Buddha</option>
+                      <option value="Khonghucu">Khonghucu</option>
+                    </select>
+                  </div>
                 </div>
+              </div>
+
+              {/* Bagian 3: Alamat & Orang Tua */}
+              <div className="space-y-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <span className="font-extrabold text-blue-900 text-[11px] uppercase tracking-wider block border-b border-slate-200 pb-1">
+                  3. Alamat & Kontak Orang Tua / Wali
+                </span>
 
                 <div>
-                  <label className="block font-bold text-slate-700 mb-1">Kategori Kelas</label>
-                  <select
-                    value={formData.kelas}
-                    onChange={(e) => setFormData({ ...formData, kelas: e.target.value })}
-                    className="w-full p-2 border rounded border-slate-300 font-bold text-slate-900"
-                  >
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.namaKelas}>
-                        {c.namaKelas}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block font-bold text-slate-700 mb-1">Alamat Lengkap</label>
+                  <textarea
+                    rows={2}
+                    value={formData.alamat || ''}
+                    onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
+                    placeholder="Contoh: Jl. Bhayangkara Komp. Pendidikan Terpadu RT 02"
+                    className="w-full p-2 border rounded-lg border-slate-300 text-slate-900 font-medium"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Nama Orang Tua / Wali</label>
+                    <input
+                      type="text"
+                      value={formData.namaOrangTua || ''}
+                      onChange={(e) => setFormData({ ...formData, namaOrangTua: e.target.value })}
+                      placeholder="Contoh: Budi Santoso"
+                      className="w-full p-2 border rounded-lg border-slate-300 text-slate-900 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">No. HP / WhatsApp Ortual</label>
+                    <input
+                      type="text"
+                      value={formData.noHpOrtu || ''}
+                      onChange={(e) => setFormData({ ...formData, noHpOrtu: e.target.value })}
+                      placeholder="Contoh: 081234567890"
+                      className="w-full p-2 border rounded-lg border-slate-300 font-mono text-slate-900"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -382,15 +626,15 @@ export const StudentData: React.FC<StudentDataProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-3 py-1.5 border rounded text-slate-600 hover:bg-slate-100 font-semibold"
+                  className="px-4 py-2 border rounded-xl text-slate-600 hover:bg-slate-100 font-semibold"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-white rounded font-bold flex items-center gap-1 shadow"
+                  className="px-5 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-xl font-black flex items-center gap-1.5 shadow"
                 >
-                  <Check className="w-4 h-4" /> Simpan
+                  <Check className="w-4 h-4" /> Simpan Data Siswa
                 </button>
               </div>
             </form>
