@@ -38,11 +38,8 @@ import { LoginForm } from './components/LoginForm';
 import { ChevronRight, Info, ShieldAlert, X } from 'lucide-react';
 
 export default function App() {
-  // Auth state - defaults to null so user MUST login first
-  const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
-    const saved = localStorage.getItem('absensi_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // Auth state - strictly null when link is opened so user MUST enter username & password first
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
 
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
 

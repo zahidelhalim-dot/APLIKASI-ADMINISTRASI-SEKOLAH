@@ -161,6 +161,39 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </button>
         </form>
 
+        {/* Quick Demo Login Preset Buttons */}
+        <div className="bg-amber-50/80 border border-amber-300 p-3.5 rounded-xl text-xs space-y-2">
+          <p className="font-extrabold text-amber-950 flex items-center gap-1.5 text-xs">
+            <KeyRound className="w-4 h-4 text-amber-700 shrink-0" /> Akun Login Bawaan (Klik untuk Otomatis Masuk):
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('admin')}
+              className="p-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[10px] text-left shadow transition-all flex flex-col justify-between"
+            >
+              <span className="font-black uppercase">🔑 ADMIN / KEPALA</span>
+              <span className="opacity-90 font-mono">admin / admin123</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('walikelas1')}
+              className="p-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[10px] text-left shadow transition-all flex flex-col justify-between"
+            >
+              <span className="font-black uppercase">🏫 WALI KELAS I</span>
+              <span className="opacity-90 font-mono">walikelas1 / 123456</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('gurupai')}
+              className="p-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg font-bold text-[10px] text-left shadow transition-all flex flex-col justify-between"
+            >
+              <span className="font-black uppercase">📖 GURU MAPEL</span>
+              <span className="opacity-90 font-mono">gurupai / 123456</span>
+            </button>
+          </div>
+        </div>
+
         {/* Roles Info Box */}
         <div className="bg-teal-50/80 border border-teal-200 p-3.5 rounded-xl text-[11px] text-teal-950 space-y-1.5">
           <p className="font-bold flex items-center gap-1.5 text-teal-900 text-xs">
