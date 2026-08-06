@@ -501,7 +501,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
         @media print {
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 8mm;
           }
           html, body {
             background: #ffffff !important;
@@ -510,9 +510,16 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
             print-color-adjust: exact !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
           }
-          .no-print {
+          .no-print, nav, header, footer, aside, button, input {
             display: none !important;
+          }
+          div, main, section {
+            box-shadow: none !important;
+            text-shadow: none !important;
           }
           ${
             singlePrintItem
@@ -524,8 +531,12 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                 display: block !important;
                 visibility: visible !important;
                 width: 100% !important;
-                max-width: 450px !important;
-                margin: 20px auto !important;
+                max-width: 420px !important;
+                margin: 0 auto !important;
+                padding-top: 10px !important;
+              }
+              #printable-single-card * {
+                visibility: visible !important;
               }
               `
               : `
@@ -536,17 +547,24 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                 display: block !important;
                 visibility: visible !important;
                 width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              #printable-cards-section * {
+                visibility: visible !important;
               }
               `
           }
           .card-grid-print {
             display: grid !important;
             grid-template-columns: repeat(2, 1fr) !important;
-            gap: 16px !important;
+            gap: 12px !important;
+            width: 100% !important;
           }
           .card-item-container {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+            margin-bottom: 8px !important;
           }
         }
       `}</style>

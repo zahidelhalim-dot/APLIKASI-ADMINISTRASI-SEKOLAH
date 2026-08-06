@@ -458,9 +458,50 @@ export async function exportToWord({
     });
   }
 
+  // 3.1 Calculate Footer Totals
+  let footerRow: TableRow;
+  if (targetType === 'siswa') {
+    let wH = 0, wS = 0, wI = 0, wA = 0, wTotal = 0;
+    students.forEach((s) => {
+      const studentAtt = attendanceRecords.filter((r) => r.targetType === 'siswa' && r.targetId === s.id);
+      wH += studentAtt.filter((r) => r.status === 'H').length;
+      wS += studentAtt.filter((r) => r.status === 'S').length;
+      wI += studentAtt.filter((r) => r.status === 'I').length;
+      wA += studentAtt.filter((r) => r.status === 'A').length;
+      wTotal += studentAtt.length;
+    });
+    const wPct = wTotal > 0 ? Math.round((wH / wTotal) * 100) : 0;
+    const footerTexts = ['TOTAL', '', 'TOTAL KESELURUHAN', '', String(wH), String(wS), String(wI), String(wA), String(wTotal), `${wPct}%`];
+    footerRow = new TableRow({
+      children: footerTexts.map((txt) => new TableCell({
+        shading: { fill: '12351E' },
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: txt, bold: true, color: 'FFFFFF', size: 18 })] })]
+      }))
+    });
+  } else {
+    let wH = 0, wS = 0, wI = 0, wA = 0, wTL = 0, wTotal = 0;
+    teachers.forEach((t) => {
+      const teacherAtt = attendanceRecords.filter((r) => r.targetType === 'guru' && r.targetId === t.id);
+      wH += teacherAtt.filter((r) => r.status === 'H').length;
+      wS += teacherAtt.filter((r) => r.status === 'S').length;
+      wI += teacherAtt.filter((r) => r.status === 'I').length;
+      wA += teacherAtt.filter((r) => r.status === 'A').length;
+      wTL += teacherAtt.filter((r) => r.status === 'TL').length;
+      wTotal += teacherAtt.length;
+    });
+    const wPct = wTotal > 0 ? Math.round(((wH + wTL) / wTotal) * 100) : 0;
+    const footerTexts = ['TOTAL', '', 'TOTAL KESELURUHAN', '', String(wH), String(wS), String(wI), String(wA), String(wTL), `${wPct}%`];
+    footerRow = new TableRow({
+      children: footerTexts.map((txt) => new TableCell({
+        shading: { fill: '12351E' },
+        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: txt, bold: true, color: 'FFFFFF', size: 18 })] })]
+      }))
+    });
+  }
+
   const table = new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
-    rows: [headerRow, ...dataRows],
+    rows: [headerRow, ...dataRows, footerRow],
   });
 
   // 4. Signature Block

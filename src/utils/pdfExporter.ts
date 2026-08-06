@@ -320,14 +320,55 @@ export function exportToPDF({
     });
   }
 
+  // Build Footer Total Row
+  let tableFooter: (string | number)[][] = [];
+  if (targetType === 'siswa') {
+    let pdfH = 0, pdfS = 0, pdfI = 0, pdfA = 0, pdfTotal = 0;
+    students.forEach((s) => {
+      const studentAtt = attendanceRecords.filter((r) => r.targetType === 'siswa' && r.targetId === s.id);
+      pdfH += studentAtt.filter((r) => r.status === 'H').length;
+      pdfS += studentAtt.filter((r) => r.status === 'S').length;
+      pdfI += studentAtt.filter((r) => r.status === 'I').length;
+      pdfA += studentAtt.filter((r) => r.status === 'A').length;
+      pdfTotal += studentAtt.length;
+    });
+    const pdfPct = pdfTotal > 0 ? Math.round((pdfH / pdfTotal) * 100) : 0;
+    tableFooter = [
+      ['', '', '', 'TOTAL KESELURUHAN', '', pdfH, pdfS, pdfI, pdfA, pdfTotal, `${pdfPct}%`]
+    ];
+  } else {
+    let pdfH = 0, pdfS = 0, pdfI = 0, pdfA = 0, pdfTL = 0, pdfTotal = 0;
+    teachers.forEach((t) => {
+      const teacherAtt = attendanceRecords.filter((r) => r.targetType === 'guru' && r.targetId === t.id);
+      pdfH += teacherAtt.filter((r) => r.status === 'H').length;
+      pdfS += teacherAtt.filter((r) => r.status === 'S').length;
+      pdfI += teacherAtt.filter((r) => r.status === 'I').length;
+      pdfA += teacherAtt.filter((r) => r.status === 'A').length;
+      pdfTL += teacherAtt.filter((r) => r.status === 'TL').length;
+      pdfTotal += teacherAtt.length;
+    });
+    const pdfPct = pdfTotal > 0 ? Math.round(((pdfH + pdfTL) / pdfTotal) * 100) : 0;
+    tableFooter = [
+      ['', '', '', '', 'TOTAL KESELURUHAN', '', pdfH, pdfS, pdfI, pdfA, pdfTL, `${pdfPct}%`]
+    ];
+  }
+
   // Draw Table
   autoTable(doc, {
     startY: 64,
     head: [tableHeaders],
     body: tableRows,
+    foot: tableFooter,
     theme: 'grid',
     headStyles: {
       fillColor: [34, 112, 62],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'center',
+      fontSize: 8.5,
+    },
+    footStyles: {
+      fillColor: [18, 53, 30],
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',

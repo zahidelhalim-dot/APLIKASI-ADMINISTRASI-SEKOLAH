@@ -244,10 +244,10 @@ export default function App() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 overflow-x-hidden">
+      <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 overflow-x-hidden print:p-0 print:m-0 print:overflow-visible">
         {/* Container Frame */}
         <div
-          className={`max-w-7xl mx-auto rounded-2xl p-3 sm:p-5 border-4 shadow-2xl space-y-4 ${
+          className={`max-w-7xl mx-auto rounded-2xl p-3 sm:p-5 border-4 shadow-2xl space-y-4 print:p-0 print:m-0 print:border-none print:shadow-none print:bg-transparent print:space-y-0 ${
             classicTheme
               ? 'bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 border-amber-800 shadow-amber-950/50'
               : 'bg-white border-slate-300 shadow-slate-200 text-slate-800'
@@ -474,14 +474,16 @@ export default function App() {
           )}
         </main>
 
-        {/* Printable View (Visible only during browser print) */}
-        <PrintableReportView
-          schoolInfo={schoolInfo}
-          students={students}
-          teachers={teachers}
-          attendanceRecords={attendanceRecords}
-          selectedMonth={selectedMonth}
-        />
+        {/* Printable View (Visible only during browser print on Laporan/Rekap views) */}
+        {(activeView === 'laporan' || activeView === 'rekap') && (
+          <PrintableReportView
+            schoolInfo={schoolInfo}
+            students={students}
+            teachers={teachers}
+            attendanceRecords={attendanceRecords}
+            selectedMonth={selectedMonth}
+          />
+        )}
 
         {/* Footer info matching screenshot designer tag */}
         <footer className="print:hidden pt-2 border-t border-amber-700/50 flex flex-wrap items-center justify-between text-[11px] font-bold text-amber-950 px-1">

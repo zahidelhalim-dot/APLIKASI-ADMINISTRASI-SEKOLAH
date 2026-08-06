@@ -28,6 +28,22 @@ export const PrintableReportView: React.FC<PrintableReportViewProps> = ({
   const studentRecords = filteredRecords.filter((r) => r.targetType === 'siswa');
   const teacherRecords = filteredRecords.filter((r) => r.targetType === 'guru');
 
+  // Calculate totals
+  const sH = studentRecords.filter((r) => r.status === 'H').length;
+  const sS = studentRecords.filter((r) => r.status === 'S').length;
+  const sI = studentRecords.filter((r) => r.status === 'I').length;
+  const sA = studentRecords.filter((r) => r.status === 'A').length;
+  const sTotal = studentRecords.length;
+  const sPct = sTotal > 0 ? Math.round((sH / sTotal) * 100) : 0;
+
+  const tH = teacherRecords.filter((r) => r.status === 'H').length;
+  const tS = teacherRecords.filter((r) => r.status === 'S').length;
+  const tI = teacherRecords.filter((r) => r.status === 'I').length;
+  const tA = teacherRecords.filter((r) => r.status === 'A').length;
+  const tTL = teacherRecords.filter((r) => r.status === 'TL').length;
+  const tTotal = teacherRecords.length;
+  const tPct = tTotal > 0 ? Math.round(((tH + tTL) / tTotal) * 100) : 0;
+
   const todayStr = new Date().toLocaleDateString('id-ID', {
     day: 'numeric',
     month: 'long',
@@ -116,6 +132,18 @@ export const PrintableReportView: React.FC<PrintableReportViewProps> = ({
               );
             })}
           </tbody>
+          <tfoot className="font-bold bg-gray-100">
+            <tr>
+              <td colSpan={4} className="border border-black p-1 text-right font-bold uppercase">
+                TOTAL KESELURUHAN ({students.length} SISWA):
+              </td>
+              <td className="border border-black p-1 text-center font-bold">{sH}</td>
+              <td className="border border-black p-1 text-center font-bold">{sS}</td>
+              <td className="border border-black p-1 text-center font-bold">{sI}</td>
+              <td className="border border-black p-1 text-center font-bold">{sA}</td>
+              <td className="border border-black p-1 text-center font-black">{sPct}%</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 
@@ -164,6 +192,19 @@ export const PrintableReportView: React.FC<PrintableReportViewProps> = ({
               );
             })}
           </tbody>
+          <tfoot className="font-bold bg-gray-100">
+            <tr>
+              <td colSpan={4} className="border border-black p-1 text-right font-bold uppercase">
+                TOTAL KESELURUHAN ({teachers.length} GURU/PTK):
+              </td>
+              <td className="border border-black p-1 text-center font-bold">{tH}</td>
+              <td className="border border-black p-1 text-center font-bold">{tS}</td>
+              <td className="border border-black p-1 text-center font-bold">{tI}</td>
+              <td className="border border-black p-1 text-center font-bold">{tA}</td>
+              <td className="border border-black p-1 text-center font-bold">{tTL}</td>
+              <td className="border border-black p-1 text-center font-black">{tPct}%</td>
+            </tr>
+          </tfoot>
         </table>
       </div>
 

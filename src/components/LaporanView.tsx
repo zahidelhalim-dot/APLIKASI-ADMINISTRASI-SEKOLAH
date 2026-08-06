@@ -54,6 +54,15 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
   );
   const waliKelasTeacher = teachers.find((t) => t.id === activeWaliKelas?.waliKelasId);
 
+  // Kolektif Totals
+  const sumH = filteredRecords.filter((r) => r.status === 'H').length;
+  const sumS = filteredRecords.filter((r) => r.status === 'S').length;
+  const sumI = filteredRecords.filter((r) => r.status === 'I').length;
+  const sumA = filteredRecords.filter((r) => r.status === 'A').length;
+  const sumTotalDays = filteredRecords.length;
+  const sumPct = sumTotalDays > 0 ? Math.round((sumH / sumTotalDays) * 100) : 0;
+  const currentDataset = targetType === 'siswa' ? filteredStudents : teachers;
+
   // Perorangan List & Auto Select
   const availablePeopleList = targetType === 'siswa'
     ? students.filter((s) => selectedKelas === 'SEMUA' || s.kelas.toLowerCase() === selectedKelas.toLowerCase())
@@ -428,6 +437,18 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                         );
                       })}
                 </tbody>
+                <tfoot className="bg-slate-200 font-bold text-[11px]">
+                  <tr>
+                    <td colSpan={4} className="border border-slate-400 p-1.5 text-right font-black uppercase">
+                      TOTAL KESELURUHAN ({currentDataset.length} {targetType === 'siswa' ? 'SISWA' : 'GURU'}):
+                    </td>
+                    <td className="border border-slate-400 p-1.5 text-center font-black text-emerald-800">{sumH}</td>
+                    <td className="border border-slate-400 p-1.5 text-center font-black text-amber-800">{sumS}</td>
+                    <td className="border border-slate-400 p-1.5 text-center font-black text-blue-800">{sumI}</td>
+                    <td className="border border-slate-400 p-1.5 text-center font-black text-rose-800">{sumA}</td>
+                    <td className="border border-slate-400 p-1.5 text-center font-black text-emerald-950 bg-emerald-100">{sumPct}%</td>
+                  </tr>
+                </tfoot>
               </table>
 
               {filteredStudents.length > 10 && (
