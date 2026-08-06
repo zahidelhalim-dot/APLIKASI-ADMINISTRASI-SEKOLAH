@@ -229,20 +229,22 @@ export default function App() {
       }`}
     >
       {/* Sidebar Navigation Drawer */}
-      <Sidebar
-        activeView={activeView}
-        onSelectView={setActiveView}
-        selectedMonth={selectedMonth}
-        onSelectMonth={setSelectedMonth}
-        currentUser={currentUser}
-        onLogout={handleLogout}
-        schoolName={schoolInfo.namaSekolah}
-        isOpen={isSidebarOpen}
-        onCloseMobile={() => setIsSidebarOpen(false)}
-        classicTheme={classicTheme}
-        onToggleTheme={() => setClassicTheme(!classicTheme)}
-        onResetData={handleResetData}
-      />
+      <div className="print:hidden">
+        <Sidebar
+          activeView={activeView}
+          onSelectView={setActiveView}
+          selectedMonth={selectedMonth}
+          onSelectMonth={setSelectedMonth}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+          schoolName={schoolInfo.namaSekolah}
+          isOpen={isSidebarOpen}
+          onCloseMobile={() => setIsSidebarOpen(false)}
+          classicTheme={classicTheme}
+          onToggleTheme={() => setClassicTheme(!classicTheme)}
+          onResetData={handleResetData}
+        />
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 min-w-0 p-2 sm:p-4 lg:p-6 overflow-x-hidden">
@@ -255,21 +257,23 @@ export default function App() {
           }`}
         >
           {/* Header Banner */}
-          <Header
-            activeView={activeView}
-            onSelectView={setActiveView}
-            classicTheme={classicTheme}
-            onToggleTheme={() => setClassicTheme(!classicTheme)}
-            onResetData={handleResetData}
-            currentUser={currentUser}
-            onOpenLogin={() => setShowLoginModal(true)}
-            onLogout={handleLogout}
-            onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          />
+          <div className="print:hidden">
+            <Header
+              activeView={activeView}
+              onSelectView={setActiveView}
+              classicTheme={classicTheme}
+              onToggleTheme={() => setClassicTheme(!classicTheme)}
+              onResetData={handleResetData}
+              currentUser={currentUser}
+              onOpenLogin={() => setShowLoginModal(true)}
+              onLogout={handleLogout}
+              onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            />
+          </div>
 
         {/* User Role Quick Info Banner if Logged In */}
         {currentUser && (
-          <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white px-4 py-2 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2 shadow border border-blue-700/50">
+          <div className="print:hidden bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white px-4 py-2 rounded-xl text-xs flex flex-wrap items-center justify-between gap-2 shadow border border-blue-700/50">
             <div className="flex items-center gap-2">
               <span className="font-mono text-[10px] bg-amber-400 text-slate-950 px-2 py-0.5 rounded font-black uppercase">
                 AKUN TERHUBUNG
@@ -340,7 +344,7 @@ export default function App() {
         )}
 
         {/* Main Content Area */}
-        <main id="main-content" className="print:hidden">
+        <main id="main-content" className={activeView === 'laporan' ? 'print:hidden' : ''}>
           {activeView === 'dashboard' && (
             <DashboardView
               schoolInfo={schoolInfo}

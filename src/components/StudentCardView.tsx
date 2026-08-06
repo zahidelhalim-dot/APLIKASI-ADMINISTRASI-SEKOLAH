@@ -499,16 +499,54 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
       {/* PRINT STYLES FOR ALL CARDS AND SINGLE CARD */}
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
           }
-          ${
-            singlePrintItem
-              ? `#printable-single-card, #printable-single-card * { visibility: visible; } #printable-single-card { position: absolute; left: 0; top: 0; width: 100%; }`
-              : `#printable-cards-section, #printable-cards-section * { visibility: visible; } #printable-cards-section { position: absolute; left: 0; top: 0; width: 100%; }`
+          html, body {
+            background: #ffffff !important;
+            color: #000000 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
           .no-print {
             display: none !important;
+          }
+          ${
+            singlePrintItem
+              ? `
+              #printable-cards-section {
+                display: none !important;
+              }
+              #printable-single-card {
+                display: block !important;
+                visibility: visible !important;
+                width: 100% !important;
+                max-width: 450px !important;
+                margin: 20px auto !important;
+              }
+              `
+              : `
+              #printable-single-card {
+                display: none !important;
+              }
+              #printable-cards-section {
+                display: block !important;
+                visibility: visible !important;
+                width: 100% !important;
+              }
+              `
+          }
+          .card-grid-print {
+            display: grid !important;
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 16px !important;
+          }
+          .card-item-container {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -683,41 +721,94 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
             </div>
           </div>
 
-          {/* SINGLE PRINT MODAL DISPLAY (FOR PRINTING 1 CARD SPECIFICALLY) */}
+          {/* SINGLE PRINT MODAL DISPLAY & PREVIEW */}
           {singlePrintItem && (
-            <div id="printable-single-card" className="hidden print:block">
-              <div className="p-4 bg-white">
-                <CardItem
-                  type={singlePrintItem.type}
-                  data={singlePrintItem.data}
-                  schoolInfo={schoolInfo}
-                  cardTheme={cardTheme}
-                  qrUrl={
-                    singlePrintItem.type === 'siswa'
-                      ? studentQrUrls[singlePrintItem.data.id]
-                      : teacherQrUrls[singlePrintItem.data.id]
-                  }
-                  onTriggerPhotoUpload={() =>
-                    triggerPhotoUpload(
-                      singlePrintItem.type,
-                      singlePrintItem.data.id
-                    )
-                  }
-                  onRemovePhoto={() =>
-                    handleRemovePhoto(
-                      singlePrintItem.type,
-                      singlePrintItem.data.id
-                    )
-                  }
-                  onPrintSingle={() =>
-                    handlePrintSingleCard(
-                      singlePrintItem.type,
-                      singlePrintItem.data
-                    )
-                  }
-                />
+            <>
+              {/* Screen Modal Preview for 1 Card */}
+              <div className="no-print fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl p-5 max-w-lg w-full space-y-4 shadow-2xl border-2 border-amber-500 animate-in zoom-in-95 duration-150">
+                  <div className="flex items-center justify-between border-b pb-2.5">
+                    <div>
+                      <span className="text-[10px] font-black uppercase text-amber-600 tracking-wider block">
+                        PRATINJAU CETAK 1 KARTU ANGGOTA
+                      </span>
+                      <h3 className="font-extrabold text-base text-slate-900">
+                        {singlePrintItem.data.nama}
+                      </h3>
+                    </div>
+                    <button
+                      onClick={() => setSinglePrintItem(null)}
+                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-extrabold transition-colors"
+                      title="Tutup Modal Pratinjau"
+                    >
+                      Tutup ✕
+                    </button>
+                  </div>
+
+                  <div className="py-2 flex justify-center">
+                    <CardItem
+                      type={singlePrintItem.type}
+                      data={singlePrintItem.data}
+                      schoolInfo={schoolInfo}
+                      cardTheme={cardTheme}
+                      qrUrl={
+                        singlePrintItem.type === 'siswa'
+                          ? studentQrUrls[singlePrintItem.data.id]
+                          : teacherQrUrls[singlePrintItem.data.id]
+                      }
+                      onTriggerPhotoUpload={() =>
+                        triggerPhotoUpload(
+                          singlePrintItem.type,
+                          singlePrintItem.data.id
+                        )
+                      }
+                      onRemovePhoto={() =>
+                        handleRemovePhoto(
+                          singlePrintItem.type,
+                          singlePrintItem.data.id
+                        )
+                      }
+                      onPrintSingle={() => window.print()}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 border-t pt-3">
+                    <button
+                      onClick={() => setSinglePrintItem(null)}
+                      className="px-4 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={() => window.print()}
+                      className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-lg border border-amber-300 flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Printer className="w-4 h-4" /> Cetak Sekarang (PDF)
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              {/* Printable Single Card Container */}
+              <div id="printable-single-card" className="hidden print:block">
+                <div className="p-4 bg-white max-w-md mx-auto">
+                  <CardItem
+                    type={singlePrintItem.type}
+                    data={singlePrintItem.data}
+                    schoolInfo={schoolInfo}
+                    cardTheme={cardTheme}
+                    qrUrl={
+                      singlePrintItem.type === 'siswa'
+                        ? studentQrUrls[singlePrintItem.data.id]
+                        : teacherQrUrls[singlePrintItem.data.id]
+                    }
+                    onTriggerPhotoUpload={() => {}}
+                    onRemovePhoto={() => {}}
+                    onPrintSingle={() => {}}
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           {/* PRINTABLE ALL CARDS GRID CONTAINER */}
@@ -744,21 +835,22 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     Tidak ada siswa yang sesuai dengan filter kelas / pencarian.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 card-grid-print">
                     {displayStudents.map((s) => (
-                      <CardItem
-                        key={s.id}
-                        type="siswa"
-                        data={s}
-                        schoolInfo={schoolInfo}
-                        cardTheme={cardTheme}
-                        qrUrl={studentQrUrls[s.id]}
-                        onTriggerPhotoUpload={() =>
-                          triggerPhotoUpload('siswa', s.id)
-                        }
-                        onRemovePhoto={() => handleRemovePhoto('siswa', s.id)}
-                        onPrintSingle={() => handlePrintSingleCard('siswa', s)}
-                      />
+                      <div key={s.id} className="card-item-container">
+                        <CardItem
+                          type="siswa"
+                          data={s}
+                          schoolInfo={schoolInfo}
+                          cardTheme={cardTheme}
+                          qrUrl={studentQrUrls[s.id]}
+                          onTriggerPhotoUpload={() =>
+                            triggerPhotoUpload('siswa', s.id)
+                          }
+                          onRemovePhoto={() => handleRemovePhoto('siswa', s.id)}
+                          onPrintSingle={() => handlePrintSingleCard('siswa', s)}
+                        />
+                      </div>
                     ))}
                   </div>
                 )}
@@ -773,21 +865,22 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     Tidak ada data guru yang sesuai dengan pencarian.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 card-grid-print">
                     {displayTeachers.map((t) => (
-                      <CardItem
-                        key={t.id}
-                        type="guru"
-                        data={t}
-                        schoolInfo={schoolInfo}
-                        cardTheme={cardTheme}
-                        qrUrl={teacherQrUrls[t.id]}
-                        onTriggerPhotoUpload={() =>
-                          triggerPhotoUpload('guru', t.id)
-                        }
-                        onRemovePhoto={() => handleRemovePhoto('guru', t.id)}
-                        onPrintSingle={() => handlePrintSingleCard('guru', t)}
-                      />
+                      <div key={t.id} className="card-item-container">
+                        <CardItem
+                          type="guru"
+                          data={t}
+                          schoolInfo={schoolInfo}
+                          cardTheme={cardTheme}
+                          qrUrl={teacherQrUrls[t.id]}
+                          onTriggerPhotoUpload={() =>
+                            triggerPhotoUpload('guru', t.id)
+                          }
+                          onRemovePhoto={() => handleRemovePhoto('guru', t.id)}
+                          onPrintSingle={() => handlePrintSingleCard('guru', t)}
+                        />
+                      </div>
                     ))}
                   </div>
                 )}
