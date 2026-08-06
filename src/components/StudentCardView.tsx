@@ -239,16 +239,20 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
         const node = hiddenExportRef.current;
         if (!node) continue;
 
+        const baseWidthPx = 480;
+        const baseHeightPx = 303;
+        const computedPixelRatio = (finalWidthPx / baseWidthPx) * jpgScaleRatio;
+
         const renderOptions = {
           quality: jpgQuality / 100,
-          pixelRatio: jpgScaleRatio,
+          pixelRatio: computedPixelRatio,
           canvasWidth: finalWidthPx,
           canvasHeight: finalHeightPx,
-          width: finalWidthPx,
-          height: finalHeightPx,
+          width: baseWidthPx,
+          height: baseHeightPx,
           style: {
-            width: `${finalWidthPx}px`,
-            height: `${finalHeightPx}px`,
+            width: `${baseWidthPx}px`,
+            height: `${baseHeightPx}px`,
             transform: 'none',
             margin: '0',
             padding: '0',
@@ -1809,13 +1813,13 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
           <div
             ref={hiddenExportRef}
             style={{
-              width: `${unitMode === 'cm' ? Math.round(customWidth * 118.11) : unitMode === 'mm' ? Math.round(customWidth * 11.811) : Math.round(customWidth)}px`,
-              height: `${unitMode === 'cm' ? Math.round(customHeight * 118.11) : unitMode === 'mm' ? Math.round(customHeight * 11.811) : Math.round(customHeight)}px`,
+              width: '480px',
+              height: '303px',
               boxSizing: 'border-box',
               overflow: 'hidden',
               backgroundColor: '#ffffff',
             }}
-            className="bg-white flex flex-col justify-between"
+            className="bg-white"
           >
             <CardItem
               type={exportCurrentItem.type}
@@ -1830,7 +1834,6 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
               onTriggerPhotoUpload={() => {}}
               onRemovePhoto={() => {}}
               onPrintSingle={() => {}}
-              isExport={true}
             />
           </div>
         </div>
@@ -1850,7 +1853,6 @@ interface CardItemProps {
   onRemovePhoto: () => void;
   onPrintSingle: () => void;
   onDownloadJpgCustom?: () => void;
-  isExport?: boolean;
 }
 
 const CardItem: React.FC<CardItemProps> = ({
@@ -1863,7 +1865,6 @@ const CardItem: React.FC<CardItemProps> = ({
   onRemovePhoto,
   onPrintSingle,
   onDownloadJpgCustom,
-  isExport = false,
 }) => {
   const isStudent = type === 'siswa';
   const student = isStudent ? (data as Student) : null;
@@ -1872,23 +1873,19 @@ const CardItem: React.FC<CardItemProps> = ({
   // Dynamic Card Theme Classes
   let headerGradient =
     'from-amber-600 via-amber-700 to-amber-800 border-amber-500';
-  let badgeBg = 'bg-amber-400 text-slate-950';
   let borderClass = 'border-amber-600';
 
   if (cardTheme === 'emerald') {
     headerGradient =
       'from-emerald-700 via-teal-800 to-emerald-950 border-emerald-500';
-    badgeBg = 'bg-emerald-500 text-slate-950';
     borderClass = 'border-emerald-600';
   } else if (cardTheme === 'blue') {
     headerGradient =
       'from-blue-800 via-indigo-900 to-slate-950 border-blue-500';
-    badgeBg = 'bg-blue-500 text-white';
     borderClass = 'border-blue-600';
   } else if (cardTheme === 'purple') {
     headerGradient =
       'from-purple-800 via-indigo-900 to-slate-950 border-purple-500';
-    badgeBg = 'bg-purple-500 text-white';
     borderClass = 'border-purple-600';
   }
 
@@ -1896,25 +1893,15 @@ const CardItem: React.FC<CardItemProps> = ({
 
   return (
     <div
-      className={`relative w-full ${
-        isExport
-          ? 'h-full border-4 rounded-3xl'
-          : 'max-w-md mx-auto rounded-2xl border-2'
-      } bg-white shadow-xl overflow-hidden ${borderClass} transition-all duration-200 hover:shadow-2xl flex flex-col justify-between`}
-      style={{ minHeight: isExport ? '100%' : '235px' }}
+      className={`relative w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border-2 ${borderClass} transition-all duration-200 hover:shadow-2xl flex flex-col justify-between`}
+      style={{ minHeight: '235px' }}
     >
       {/* Top Card Header */}
       <div
-        className={`bg-gradient-to-r ${headerGradient} text-white ${
-          isExport ? 'p-4 border-b-4' : 'p-3 border-b-2'
-        } flex items-center justify-between gap-2 shadow-inner`}
+        className={`bg-gradient-to-r ${headerGradient} text-white p-3 border-b-2 flex items-center justify-between gap-2 shadow-inner`}
       >
         <div className="flex items-center gap-2.5">
-          <div
-            className={`${
-              isExport ? 'w-12 h-12 rounded-xl p-1' : 'w-8 h-8 rounded-lg p-0.5'
-            } bg-white text-slate-950 flex items-center justify-center shrink-0 border border-amber-300 shadow overflow-hidden`}
-          >
+          <div className="w-9 h-9 bg-white text-slate-950 rounded-lg p-0.5 flex items-center justify-center shrink-0 border border-amber-300 shadow overflow-hidden">
             {schoolInfo.logoUrl ? (
               <img
                 src={schoolInfo.logoUrl}
@@ -1922,58 +1909,28 @@ const CardItem: React.FC<CardItemProps> = ({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <Award className={`${isExport ? 'w-8 h-8' : 'w-6 h-6'} text-amber-600`} />
+              <Award className="w-6 h-6 text-amber-600" />
             )}
           </div>
           <div>
-            <span
-              className={`${
-                isExport ? 'text-xs' : 'text-[9px]'
-              } font-black tracking-widest text-amber-300 uppercase block leading-none`}
-            >
+            <span className="text-[9px] font-black tracking-widest text-amber-300 uppercase block leading-none">
               KARTU ANGGOTA {isStudent ? 'SISWA' : 'GURU & PTK'}
             </span>
-            <h3
-              className={`font-extrabold ${
-                isExport ? 'text-base sm:text-lg' : 'text-xs'
-              } uppercase tracking-wide text-white leading-tight`}
-            >
+            <h3 className="font-extrabold text-xs uppercase tracking-wide text-white leading-tight">
               {schoolInfo.namaSekolah}
             </h3>
-            <span
-              className={`${
-                isExport ? 'text-xs' : 'text-[8px]'
-              } text-slate-300 block line-clamp-1`}
-            >
+            <span className="text-[8px] text-slate-300 block line-clamp-1">
               NPSN: {schoolInfo.npsn} • {schoolInfo.kabupatenKota}
             </span>
           </div>
         </div>
-
-        <span
-          className={`${
-            isExport ? 'text-xs px-3.5 py-1.5' : 'text-[9px] px-2 py-0.5'
-          } font-black uppercase rounded-full shadow ${badgeBg}`}
-        >
-          {isStudent ? student?.kelas : teacher?.statusPtk}
-        </span>
       </div>
 
       {/* Card Body Content */}
-      <div
-        className={`${
-          isExport ? 'p-5 gap-5' : 'p-3 gap-3'
-        } bg-gradient-to-br from-slate-50 via-white to-amber-50/20 grid grid-cols-12 items-center flex-1`}
-      >
+      <div className="p-3 bg-gradient-to-br from-slate-50 via-white to-amber-50/20 grid grid-cols-12 gap-3 items-center flex-1">
         {/* Photo Box with interactive Upload */}
         <div className="col-span-3 flex flex-col items-center gap-1 relative group">
-          <div
-            className={`${
-              isExport
-                ? 'w-28 h-36 border-3 rounded-2xl shadow-md'
-                : 'w-20 h-24 border-2 rounded-xl shadow-inner'
-            } bg-slate-200 border-slate-400 overflow-hidden flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-100 to-slate-300`}
-          >
+          <div className="w-20 h-26 bg-slate-200 border-2 border-slate-400 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-100 to-slate-300">
             {fotoUrl ? (
               <img
                 src={fotoUrl}
@@ -1982,20 +1939,12 @@ const CardItem: React.FC<CardItemProps> = ({
               />
             ) : (
               <div className="text-center p-1">
-                <div
-                  className={`${
-                    isExport ? 'w-14 h-14' : 'w-10 h-10'
-                  } bg-amber-400/30 text-slate-800 rounded-full flex items-center justify-center mx-auto border border-amber-400/50`}
-                >
-                  <span className={`font-black ${isExport ? 'text-xl' : 'text-sm'}`}>
+                <div className="w-10 h-10 bg-amber-400/30 text-slate-800 rounded-full flex items-center justify-center mx-auto border border-amber-400/50">
+                  <span className="font-black text-sm">
                     {data.jenisKelamin === 'L' ? '👦' : '👧'}
                   </span>
                 </div>
-                <span
-                  className={`${
-                    isExport ? 'text-[9px]' : 'text-[7px]'
-                  } font-extrabold text-slate-600 uppercase block mt-1`}
-                >
+                <span className="text-[7px] font-extrabold text-slate-600 uppercase block mt-1">
                   TANPA FOTO
                 </span>
               </div>
@@ -2024,50 +1973,28 @@ const CardItem: React.FC<CardItemProps> = ({
 
           <button
             onClick={onTriggerPhotoUpload}
-            className={`no-print ${
-              isExport ? 'text-xs' : 'text-[8px]'
-            } text-amber-700 font-extrabold underline hover:text-amber-900`}
+            className="no-print text-[8px] text-amber-700 font-extrabold underline hover:text-amber-900"
           >
             {fotoUrl ? 'Ganti Foto' : '+ Unggah Foto'}
           </button>
         </div>
 
         {/* Biodata Section */}
-        <div
-          className={`col-span-6 ${
-            isExport ? 'space-y-2 text-sm' : 'space-y-1 text-xs'
-          } text-slate-900`}
-        >
+        <div className="col-span-6 space-y-1 text-slate-900 text-xs">
           <div>
-            <span
-              className={`${
-                isExport ? 'text-xs' : 'text-[9px]'
-              } font-bold text-slate-500 uppercase block leading-none`}
-            >
+            <span className="text-[9px] font-bold text-slate-500 uppercase block leading-none">
               NAMA LENGKAP {isStudent ? 'SISWA' : 'GURU'}
             </span>
-            <h4
-              className={`font-black ${
-                isExport ? 'text-lg sm:text-xl' : 'text-sm'
-              } text-amber-950 uppercase line-clamp-1`}
-            >
+            <h4 className="font-black text-sm text-amber-950 uppercase line-clamp-1">
               {data.nama}
             </h4>
           </div>
 
-          <div
-            className={`bg-slate-100/90 ${
-              isExport ? 'p-2.5 rounded-xl text-xs space-y-1' : 'p-1.5 rounded-lg text-[10px] space-y-0.5'
-            } border border-slate-200`}
-          >
+          <div className="bg-slate-100/90 p-1.5 rounded-lg border border-slate-200 text-[10px] space-y-0.5">
             {isStudent ? (
               <div className="grid grid-cols-2 gap-1">
                 <div>
-                  <span
-                    className={`${
-                      isExport ? 'text-xs' : 'text-[8px]'
-                    } font-bold text-slate-500 block`}
-                  >
+                  <span className="text-[8px] font-bold text-slate-500 block">
                     NIS
                   </span>
                   <span className="font-mono font-extrabold text-slate-900">
@@ -2075,11 +2002,7 @@ const CardItem: React.FC<CardItemProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span
-                    className={`${
-                      isExport ? 'text-xs' : 'text-[8px]'
-                    } font-bold text-slate-500 block`}
-                  >
+                  <span className="text-[8px] font-bold text-slate-500 block">
                     NISN
                   </span>
                   <span className="font-mono font-extrabold text-slate-900">
@@ -2089,11 +2012,7 @@ const CardItem: React.FC<CardItemProps> = ({
               </div>
             ) : (
               <div>
-                <span
-                  className={`${
-                    isExport ? 'text-xs' : 'text-[8px]'
-                  } font-bold text-slate-500 block`}
-                >
+                <span className="text-[8px] font-bold text-slate-500 block">
                   NIP / NUPTK
                 </span>
                 <span className="font-mono font-extrabold text-slate-900 block truncate">
@@ -2103,31 +2022,21 @@ const CardItem: React.FC<CardItemProps> = ({
             )}
           </div>
 
-          <div
-            className={`${
-              isExport ? 'text-xs space-y-1 pt-1' : 'text-[9px] space-y-0.5 pt-0.5'
-            } text-slate-600`}
-          >
+          <div className="text-[9px] text-slate-600 space-y-0.5 pt-0.5">
             <p className="line-clamp-1">
-              <strong className="text-slate-800">
-                {isStudent ? 'Rombel:' : 'Jabatan:'}
-              </strong>{' '}
-              {isStudent ? student?.kelas : teacher?.jabatan}
+              <strong className="text-slate-800">Alamat:</strong>{' '}
+              {schoolInfo.alamat || schoolInfo.kabupatenKota}
             </p>
-            <p>
-              <strong className="text-slate-800">Thn Ajaran:</strong>{' '}
-              {schoolInfo.tahunPelajaran}
+            <p className="line-clamp-1">
+              <strong className="text-slate-800">Berlaku:</strong>{' '}
+              {isStudent ? 'selama menjadi siswa/i' : 'selama menjadi PTK'}
             </p>
           </div>
         </div>
 
         {/* QR Code Box */}
         <div className="col-span-3 flex flex-col items-center justify-center border-l border-slate-200 pl-2">
-          <div
-            className={`${
-              isExport ? 'w-28 h-28 p-2 rounded-2xl border-2' : 'w-20 h-20 p-1 rounded-xl border'
-            } bg-white border-slate-300 shadow-sm flex items-center justify-center`}
-          >
+          <div className="w-20 h-20 bg-white p-1 rounded-xl border border-slate-300 shadow-sm flex items-center justify-center">
             {qrUrl ? (
               <img
                 src={qrUrl}
@@ -2135,26 +2044,18 @@ const CardItem: React.FC<CardItemProps> = ({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <QrCode className={`${isExport ? 'w-16 h-16' : 'w-12 h-12'} text-slate-400`} />
+              <QrCode className="w-12 h-12 text-slate-400" />
             )}
           </div>
-          <span
-            className={`${
-              isExport ? 'text-xs mt-2' : 'text-[8px] mt-1'
-            } font-mono font-black text-slate-600 uppercase text-center`}
-          >
+          <span className="text-[8px] font-mono font-black text-slate-600 mt-1 uppercase text-center">
             SCAN ABSENSI
           </span>
         </div>
       </div>
 
       {/* Card Footer Signature & Single Print Button */}
-      <div
-        className={`bg-slate-900 text-slate-300 ${
-          isExport ? 'text-xs px-5 py-2.5 border-t-2' : 'text-[8px] px-3 py-1.5 border-t'
-        } flex items-center justify-between border-slate-800`}
-      >
-        <span className={`font-mono font-bold text-amber-400 ${isExport ? 'text-xs' : 'text-[8px]'}`}>
+      <div className="bg-slate-900 text-slate-300 text-[8px] px-3 py-1.5 flex items-center justify-between border-t border-slate-800">
+        <span className="font-mono font-bold text-amber-400">
           {schoolInfo.kabupatenKota}, 2026
         </span>
 
@@ -2175,7 +2076,7 @@ const CardItem: React.FC<CardItemProps> = ({
           >
             <Printer className="w-3 h-3" /> Cetak
           </button>
-          <span className={`block font-bold text-slate-200 uppercase ${isExport ? 'text-xs' : 'text-[8px]'}`}>
+          <span className="block font-bold text-slate-200 uppercase">
             Kepala Sekolah: {schoolInfo.namaKepalaSekolah}
           </span>
         </div>
