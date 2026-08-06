@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import { toJpeg, toPng } from 'html-to-image';
+import { saveAs } from 'file-saver';
 import {
   Student,
   Teacher,
@@ -30,6 +32,12 @@ import {
   Sparkles,
   Trash2,
   FileCheck2,
+  Download,
+  Sliders,
+  Settings,
+  Check,
+  DownloadCloud,
+  Layers,
 } from 'lucide-react';
 
 interface StudentCardViewProps {
@@ -71,6 +79,217 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
     type: 'siswa' | 'guru';
     data: Student | Teacher;
   } | null>(null);
+
+  // Custom JPG Export state
+  const [jpgModalOpen, setJpgModalOpen] = useState(false);
+  const [selectedJpgItem, setSelectedJpgItem] = useState<{
+    type: 'siswa' | 'guru';
+    data: Student | Teacher;
+  } | null>(null);
+  const [jpgExportScope, setJpgExportScope] = useState<'single' | 'batch'>('single');
+  const [jpgPreset, setJpgPreset] = useState<'cr80' | 'medium' | 'hd' | 'ultrahd' | 'custom'>('cr80');
+  const [unitMode, setUnitMode] = useState<'cm' | 'mm' | 'px'>('cm');
+  const [customWidth, setCustomWidth] = useState<number>(8.56);
+  const [customHeight, setCustomHeight] = useState<number>(5.4);
+  const [jpgQuality, setJpgQuality] = useState<number>(98);
+  const [jpgScaleRatio, setJpgScaleRatio] = useState<number>(2);
+  const [exportFormat, setExportFormat] = useState<'jpg' | 'png'>('jpg');
+  const [isExportingJpg, setIsExportingJpg] = useState(false);
+  const [exportProgress, setExportProgress] = useState('');
+  const [exportCurrentItem, setExportCurrentItem] = useState<{
+    type: 'siswa' | 'guru';
+    data: Student | Teacher;
+  } | null>(null);
+
+  const hiddenExportRef = useRef<HTMLDivElement | null>(null);
+
+  const handlePresetChange = (preset: 'cr80' | 'medium' | 'hd' | 'ultrahd' | 'custom') => {
+    setJpgPreset(preset);
+    if (preset === 'cr80') {
+      if (unitMode === 'cm') {
+        setCustomWidth(8.56);
+        setCustomHeight(5.4);
+      } else if (unitMode === 'mm') {
+        setCustomWidth(85.6);
+        setCustomHeight(54.0);
+      } else {
+        setCustomWidth(1011);
+        setCustomHeight(638);
+      }
+    } else if (preset === 'medium') {
+      if (unitMode === 'cm') {
+        setCustomWidth(10.16);
+        setCustomHeight(6.35);
+      } else if (unitMode === 'mm') {
+        setCustomWidth(101.6);
+        setCustomHeight(63.5);
+      } else {
+        setCustomWidth(1200);
+        setCustomHeight(750);
+      }
+    } else if (preset === 'hd') {
+      if (unitMode === 'cm') {
+        setCustomWidth(16.25);
+        setCustomHeight(10.16);
+      } else if (unitMode === 'mm') {
+        setCustomWidth(162.5);
+        setCustomHeight(101.6);
+      } else {
+        setCustomWidth(1920);
+        setCustomHeight(1200);
+      }
+    } else if (preset === 'ultrahd') {
+      if (unitMode === 'cm') {
+        setCustomWidth(32.51);
+        setCustomHeight(20.32);
+      } else if (unitMode === 'mm') {
+        setCustomWidth(325.1);
+        setCustomHeight(203.2);
+      } else {
+        setCustomWidth(3840);
+        setCustomHeight(2400);
+      }
+    }
+  };
+
+  const handleUnitModeToggle = (mode: 'cm' | 'mm' | 'px') => {
+    if (mode === unitMode) return;
+    
+    // Calculate base width & height in mm
+    let wMm = customWidth;
+    let hMm = customHeight;
+    if (unitMode === 'cm') {
+      wMm = customWidth * 10;
+      hMm = customHeight * 10;
+    } else if (unitMode === 'px') {
+      wMm = customWidth / 11.811;
+      hMm = customHeight / 11.811;
+    }
+
+    if (mode === 'cm') {
+      setCustomWidth(parseFloat((wMm / 10).toFixed(2)));
+      setCustomHeight(parseFloat((hMm / 10).toFixed(2)));
+    } else if (mode === 'mm') {
+      setCustomWidth(parseFloat(wMm.toFixed(1)));
+      setCustomHeight(parseFloat(hMm.toFixed(1)));
+    } else {
+      setCustomWidth(Math.round(wMm * 11.811));
+      setCustomHeight(Math.round(hMm * 11.811));
+    }
+    setUnitMode(mode);
+  };
+
+  const handleOpenJpgModal = (item?: { type: 'siswa' | 'guru'; data: Student | Teacher } | null) => {
+    if (item) {
+      setSelectedJpgItem(item);
+      setExportCurrentItem(item);
+      setJpgExportScope('single');
+    } else {
+      const firstItem =
+        cardTarget === 'siswa' && displayStudents.length > 0
+          ? { type: 'siswa' as const, data: displayStudents[0] }
+          : cardTarget === 'guru' && displayTeachers.length > 0
+          ? { type: 'guru' as const, data: displayTeachers[0] }
+          : null;
+      setSelectedJpgItem(firstItem);
+      setExportCurrentItem(firstItem);
+      setJpgExportScope('batch');
+    }
+    setJpgModalOpen(true);
+  };
+
+  const executeJpgExport = async () => {
+    setIsExportingJpg(true);
+    setExportProgress('Mempersiapkan canvas render...');
+
+    try {
+      let finalWidthPx = Math.max(100, Math.round(customWidth));
+      let finalHeightPx = Math.max(100, Math.round(customHeight));
+      if (unitMode === 'cm') {
+        finalWidthPx = Math.max(100, Math.round(customWidth * 118.11));
+        finalHeightPx = Math.max(100, Math.round(customHeight * 118.11));
+      } else if (unitMode === 'mm') {
+        finalWidthPx = Math.max(100, Math.round(customWidth * 11.811));
+        finalHeightPx = Math.max(100, Math.round(customHeight * 11.811));
+      }
+
+      const itemsToProcess: { type: 'siswa' | 'guru'; data: Student | Teacher }[] = [];
+      if (jpgExportScope === 'single' && selectedJpgItem) {
+        itemsToProcess.push(selectedJpgItem);
+      } else {
+        const list = cardTarget === 'siswa' ? displayStudents : displayTeachers;
+        list.forEach((item) => {
+          itemsToProcess.push({ type: cardTarget, data: item });
+        });
+      }
+
+      if (itemsToProcess.length === 0) {
+        alert('Tidak ada kartu untuk diunduh.');
+        setIsExportingJpg(false);
+        return;
+      }
+
+      for (let i = 0; i < itemsToProcess.length; i++) {
+        const current = itemsToProcess[i];
+        setExportCurrentItem(current);
+        setExportProgress(`Memproses gambar ${i + 1} dari ${itemsToProcess.length}: ${current.data.nama}`);
+
+        await new Promise((res) => setTimeout(res, 200));
+
+        const node = hiddenExportRef.current;
+        if (!node) continue;
+
+        const renderOptions = {
+          quality: jpgQuality / 100,
+          pixelRatio: jpgScaleRatio,
+          canvasWidth: finalWidthPx,
+          canvasHeight: finalHeightPx,
+          width: finalWidthPx,
+          height: finalHeightPx,
+          style: {
+            width: `${finalWidthPx}px`,
+            height: `${finalHeightPx}px`,
+            transform: 'none',
+            margin: '0',
+            padding: '0',
+          },
+          filter: (el: HTMLElement) => {
+            if (el.classList && el.classList.contains('no-print')) {
+              return false;
+            }
+            return true;
+          },
+        };
+
+        let dataUrl = '';
+        if (exportFormat === 'png') {
+          dataUrl = await toPng(node, renderOptions);
+        } else {
+          dataUrl = await toJpeg(node, { ...renderOptions, backgroundColor: '#ffffff' });
+        }
+
+        const safeNama = current.data.nama.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const dimStr = unitMode === 'cm' ? `${customWidth}x${customHeight}cm` : unitMode === 'mm' ? `${customWidth}x${customHeight}mm` : `${finalWidthPx}x${finalHeightPx}px`;
+        const filename = `Kartu_${current.type === 'siswa' ? 'Siswa' : 'Guru'}_${safeNama}_${dimStr}`;
+
+        saveAs(dataUrl, `${filename}.${exportFormat === 'png' ? 'png' : 'jpg'}`);
+
+        if (itemsToProcess.length > 1) {
+          await new Promise((res) => setTimeout(res, 300));
+        }
+      }
+
+      setExportProgress('Selesai mengunduh gambar!');
+      setTimeout(() => {
+        setIsExportingJpg(false);
+        setJpgModalOpen(false);
+      }, 600);
+    } catch (err) {
+      console.error('Export JPG error:', err);
+      alert('Gagal mengekspor gambar kartu. Silakan periksa ukuran dan dicoba kembali.');
+      setIsExportingJpg(false);
+    }
+  };
 
   // QR Code URL maps
   const [studentQrUrls, setStudentQrUrls] = useState<{ [id: string]: string }>({});
@@ -726,6 +945,17 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
 
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => handleOpenJpgModal(null)}
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white hover:from-blue-700 hover:to-indigo-800 font-black text-xs rounded-xl shadow-lg border border-blue-300 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+                  title="Download Kartu dalam Format JPG dengan Ukuran & Resolusi Kustom"
+                >
+                  <Download className="w-4 h-4" /> Download JPG Custom (
+                  {cardTarget === 'siswa'
+                    ? displayStudents.length
+                    : displayTeachers.length}
+                  )
+                </button>
+                <button
                   onClick={handlePrintAllCards}
                   className="px-5 py-2 bg-gradient-to-r from-amber-500 via-amber-600 to-amber-700 text-slate-950 hover:from-amber-600 hover:to-amber-800 font-black text-xs rounded-xl shadow-lg border border-amber-300 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
@@ -787,6 +1017,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                         )
                       }
                       onPrintSingle={() => window.print()}
+                      onDownloadJpgCustom={() => handleOpenJpgModal(singlePrintItem)}
                     />
                   </div>
 
@@ -796,6 +1027,12 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                       className="px-4 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition-colors"
                     >
                       Batal
+                    </button>
+                    <button
+                      onClick={() => handleOpenJpgModal(singlePrintItem)}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow border border-blue-300 flex items-center gap-1.5 transition-all cursor-pointer"
+                    >
+                      <Download className="w-4 h-4" /> Download JPG
                     </button>
                     <button
                       onClick={() => window.print()}
@@ -867,6 +1104,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                           }
                           onRemovePhoto={() => handleRemovePhoto('siswa', s.id)}
                           onPrintSingle={() => handlePrintSingleCard('siswa', s)}
+                          onDownloadJpgCustom={() => handleOpenJpgModal({ type: 'siswa', data: s })}
                         />
                       </div>
                     ))}
@@ -897,6 +1135,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                           }
                           onRemovePhoto={() => handleRemovePhoto('guru', t.id)}
                           onPrintSingle={() => handlePrintSingleCard('guru', t)}
+                          onDownloadJpgCustom={() => handleOpenJpgModal({ type: 'guru', data: t })}
                         />
                       </div>
                     ))}
@@ -1184,6 +1423,418 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* MODAL: DOWNLOAD KARTU JPG UKURAN CUSTOM */}
+      {jpgModalOpen && (
+        <div className="no-print fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border-2 border-blue-500 overflow-hidden my-auto animate-in zoom-in-95 duration-150 flex flex-col max-h-[92vh]">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-950 text-white p-4 border-b border-blue-500 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 bg-blue-500/30 text-blue-300 rounded-xl flex items-center justify-center border border-blue-400/50 shadow-inner">
+                  <ImageIcon className="w-5 h-5 text-blue-300" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase text-blue-300 tracking-wider block">
+                    DOWNLOAD GAMBAR KARTU
+                  </span>
+                  <h3 className="font-extrabold text-base text-white">
+                    Ukuran & Resolusi Custom (JPG / PNG)
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={() => setJpgModalOpen(false)}
+                disabled={isExportingJpg}
+                className="p-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-black transition-colors disabled:opacity-50"
+              >
+                Tutup ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-5 text-slate-800 text-xs">
+              {/* 1. Scope Selection */}
+              <div className="space-y-2">
+                <label className="font-extrabold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-blue-600" /> Target Kartu Yang Diunduh:
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setJpgExportScope('single');
+                      if (!selectedJpgItem) {
+                        const first =
+                          cardTarget === 'siswa' && displayStudents.length > 0
+                            ? { type: 'siswa' as const, data: displayStudents[0] }
+                            : cardTarget === 'guru' && displayTeachers.length > 0
+                            ? { type: 'guru' as const, data: displayTeachers[0] }
+                            : null;
+                        setSelectedJpgItem(first);
+                        setExportCurrentItem(first);
+                      }
+                    }}
+                    className={`p-3 rounded-xl border-2 font-extrabold text-left transition-all ${
+                      jpgExportScope === 'single'
+                        ? 'border-blue-600 bg-blue-50/80 text-blue-950 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black">1 Kartu Terpilih</span>
+                      {jpgExportScope === 'single' && <Check className="w-4 h-4 text-blue-600" />}
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1 font-normal line-clamp-1">
+                      {selectedJpgItem ? selectedJpgItem.data.nama : 'Pilih kartu anggota'}
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setJpgExportScope('batch')}
+                    className={`p-3 rounded-xl border-2 font-extrabold text-left transition-all ${
+                      jpgExportScope === 'batch'
+                        ? 'border-blue-600 bg-blue-50/80 text-blue-950 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black">Semua Kartu Filtered</span>
+                      {jpgExportScope === 'batch' && <Check className="w-4 h-4 text-blue-600" />}
+                    </div>
+                    <p className="text-[10px] text-slate-500 mt-1 font-normal">
+                      Unduh masal {cardTarget === 'siswa' ? displayStudents.length : displayTeachers.length} kartu {cardTarget}
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Dropdown if scope is single */}
+              {jpgExportScope === 'single' && (
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5">
+                  <label className="text-[11px] font-extrabold text-slate-700">
+                    Pilih Kartu {cardTarget === 'siswa' ? 'Siswa' : 'Guru'}:
+                  </label>
+                  <select
+                    value={selectedJpgItem?.data.id || ''}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      if (cardTarget === 'siswa') {
+                        const s = students.find((st) => st.id === id);
+                        if (s) {
+                          const item = { type: 'siswa' as const, data: s };
+                          setSelectedJpgItem(item);
+                          setExportCurrentItem(item);
+                        }
+                      } else {
+                        const t = teachers.find((tc) => tc.id === id);
+                        if (t) {
+                          const item = { type: 'guru' as const, data: t };
+                          setSelectedJpgItem(item);
+                          setExportCurrentItem(item);
+                        }
+                      }
+                    }}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-2 font-bold text-xs focus:ring-2 focus:ring-blue-500"
+                  >
+                    {cardTarget === 'siswa'
+                      ? displayStudents.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.nama} ({s.kelas} - NIS: {s.nis})
+                          </option>
+                        ))
+                      : displayTeachers.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.nama} ({t.jabatan})
+                          </option>
+                        ))}
+                  </select>
+                </div>
+              )}
+
+              {/* 2. Preset Dimensions */}
+              <div className="space-y-2">
+                <label className="font-extrabold text-slate-900 uppercase text-[11px] flex items-center gap-1.5">
+                  <Sliders className="w-4 h-4 text-blue-600" /> Preset Ukuran Kartu:
+                </label>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { id: 'cr80', name: 'Standard ID-1 / CR80', desc: '8.56 × 5.4 cm (85.6 × 54 mm)' },
+                    { id: 'medium', name: 'Sedang (Medium)', desc: '10.16 × 6.35 cm (1200 × 750 px)' },
+                    { id: 'hd', name: 'Tinggi (Full HD)', desc: '16.25 × 10.16 cm (1920 × 1200 px)' },
+                    { id: 'ultrahd', name: 'Super Tajam (4K)', desc: '32.51 × 20.32 cm (3840 × 2400 px)' },
+                    { id: 'custom', name: 'Ukuran Custom', desc: 'Bebas atur Lebar & Tinggi' },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handlePresetChange(p.id as any)}
+                      className={`p-2.5 rounded-xl border-2 text-left transition-all ${
+                        jpgPreset === p.id
+                          ? 'border-blue-600 bg-blue-50 font-black text-blue-900 shadow-sm'
+                          : 'border-slate-200 bg-white font-bold text-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="text-[11px] leading-tight">{p.name}</div>
+                      <div className="text-[9px] text-slate-500 font-normal mt-0.5">{p.desc}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Custom Inputs & Unit Switcher */}
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-extrabold text-slate-800 text-[11px]">
+                    Dimensi Canvas Gambar:
+                  </span>
+                  <div className="flex bg-slate-200 p-0.5 rounded-lg text-[10px] font-bold">
+                    <button
+                      type="button"
+                      onClick={() => handleUnitModeToggle('cm')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        unitMode === 'cm' ? 'bg-blue-600 text-white font-black shadow' : 'text-slate-600'
+                      }`}
+                    >
+                      Centimeter (cm)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUnitModeToggle('mm')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        unitMode === 'mm' ? 'bg-blue-600 text-white font-black shadow' : 'text-slate-600'
+                      }`}
+                    >
+                      Milimeter (mm)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleUnitModeToggle('px')}
+                      className={`px-2.5 py-1 rounded-md transition-all ${
+                        unitMode === 'px' ? 'bg-blue-600 text-white font-black shadow' : 'text-slate-600'
+                      }`}
+                    >
+                      Pixel (px)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[10px] font-extrabold text-slate-600 block mb-1">
+                      Lebar ({unitMode}):
+                    </label>
+                    <input
+                      type="number"
+                      step={unitMode === 'cm' ? '0.01' : unitMode === 'mm' ? '0.1' : '1'}
+                      value={customWidth}
+                      onChange={(e) => {
+                        setCustomWidth(Math.max(0.1, parseFloat(e.target.value) || 0));
+                        setJpgPreset('custom');
+                      }}
+                      min={0.1}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-extrabold text-slate-600 block mb-1">
+                      Tinggi ({unitMode}):
+                    </label>
+                    <input
+                      type="number"
+                      step={unitMode === 'cm' ? '0.01' : unitMode === 'mm' ? '0.1' : '1'}
+                      value={customHeight}
+                      onChange={(e) => {
+                        setCustomHeight(Math.max(0.1, parseFloat(e.target.value) || 0));
+                        setJpgPreset('custom');
+                      }}
+                      min={0.1}
+                      className="w-full bg-white border border-slate-300 rounded-lg p-2 font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="text-[10px] text-slate-500 flex items-center justify-between pt-1 border-t border-slate-200 font-mono">
+                  <span>
+                    Output Size:{' '}
+                    <strong>
+                      {unitMode === 'cm'
+                        ? `${customWidth} × ${customHeight} cm (${Math.round(customWidth * 118.11)} × ${Math.round(customHeight * 118.11)} px)`
+                        : unitMode === 'mm'
+                        ? `${customWidth} × ${customHeight} mm (${Math.round(customWidth * 11.811)} × ${Math.round(customHeight * 11.811)} px)`
+                        : `${customWidth} × ${customHeight} px`}
+                    </strong>
+                  </span>
+                  <span>
+                    Rasio: {(customWidth / (customHeight || 1)).toFixed(2)}:1
+                  </span>
+                </div>
+              </div>
+
+              {/* 4. Format & Quality Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div>
+                  <label className="text-[10px] font-extrabold text-slate-700 block mb-1">
+                    Format File:
+                  </label>
+                  <select
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value as any)}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-1.5 font-bold text-xs focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="jpg">JPG / JPEG (Kualitas Tinggi)</option>
+                    <option value="png">PNG (HQ Lossless)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-extrabold text-slate-700 block mb-1">
+                    Kerapatan DPI / Multiplier:
+                  </label>
+                  <select
+                    value={jpgScaleRatio}
+                    onChange={(e) => setJpgScaleRatio(Number(e.target.value))}
+                    className="w-full bg-white border border-slate-300 rounded-lg p-1.5 font-bold text-xs focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value={1}>1x (Standard / 96 DPI)</option>
+                    <option value={2}>2x (Sangat Tajam / 300 DPI - Rekomendasi)</option>
+                    <option value={3}>3x (Ultra Sharp / 600 DPI)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-extrabold text-slate-700 block mb-1">
+                    Kualitas Kompresi JPG ({jpgQuality}%):
+                  </label>
+                  <input
+                    type="range"
+                    min="60"
+                    max="100"
+                    value={jpgQuality}
+                    disabled={exportFormat === 'png'}
+                    onChange={(e) => setJpgQuality(Number(e.target.value))}
+                    className="w-full accent-blue-600 mt-1"
+                  />
+                </div>
+              </div>
+
+              {/* 5. Live Card Preview Box */}
+              {exportCurrentItem && (
+                <div className="space-y-1.5">
+                  <label className="font-extrabold text-slate-900 text-[11px] uppercase block">
+                    Pratinjau Hasil Render Kartu:
+                  </label>
+                  <div className="bg-slate-900 p-4 rounded-2xl flex justify-center items-center overflow-hidden border border-slate-800 shadow-inner">
+                    <div className="transform scale-90 sm:scale-100 transition-transform">
+                      <CardItem
+                        type={exportCurrentItem.type}
+                        data={exportCurrentItem.data}
+                        schoolInfo={schoolInfo}
+                        cardTheme={cardTheme}
+                        qrUrl={
+                          exportCurrentItem.type === 'siswa'
+                            ? studentQrUrls[exportCurrentItem.data.id]
+                            : teacherQrUrls[exportCurrentItem.data.id]
+                        }
+                        onTriggerPhotoUpload={() => {}}
+                        onRemovePhoto={() => {}}
+                        onPrintSingle={() => {}}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Progress Bar when Exporting */}
+              {isExportingJpg && (
+                <div className="bg-blue-50 border-2 border-blue-400 p-3 rounded-xl space-y-2 animate-pulse">
+                  <div className="flex items-center justify-between text-xs font-black text-blue-900">
+                    <span className="flex items-center gap-2">
+                      <DownloadCloud className="w-4 h-4 text-blue-600 animate-bounce" />
+                      Mengekspor Gambar Kartu...
+                    </span>
+                    <span className="font-mono text-[11px]">{exportProgress}</span>
+                  </div>
+                  <div className="w-full bg-blue-200 h-2 rounded-full overflow-hidden">
+                    <div className="bg-blue-600 h-full w-full animate-pulse"></div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3 shrink-0">
+              <span className="text-[10px] text-slate-500 font-medium hidden sm:inline">
+                *File akan diunduh langsung dengan ekstensi .{exportFormat}
+              </span>
+
+              <div className="flex items-center gap-2 ml-auto">
+                <button
+                  type="button"
+                  onClick={() => setJpgModalOpen(false)}
+                  disabled={isExportingJpg}
+                  className="px-4 py-2 bg-slate-200 text-slate-700 font-extrabold text-xs rounded-xl hover:bg-slate-300 transition-colors disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={executeJpgExport}
+                  disabled={isExportingJpg}
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-xs rounded-xl shadow-lg border border-blue-300 flex items-center gap-2 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <Download className="w-4 h-4" /> Unduh Gambar Sekarang
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HIDDEN RENDER CONTAINER FOR EXACT CUSTOM SIZE CANVAS RENDERING */}
+      {exportCurrentItem && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '-9999px',
+            top: '-9999px',
+            zIndex: -9999,
+            pointerEvents: 'none',
+            opacity: 0,
+          }}
+        >
+          <div
+            ref={hiddenExportRef}
+            style={{
+              width: `${unitMode === 'cm' ? Math.round(customWidth * 118.11) : unitMode === 'mm' ? Math.round(customWidth * 11.811) : Math.round(customWidth)}px`,
+              height: `${unitMode === 'cm' ? Math.round(customHeight * 118.11) : unitMode === 'mm' ? Math.round(customHeight * 11.811) : Math.round(customHeight)}px`,
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+              backgroundColor: '#ffffff',
+            }}
+            className="bg-white flex flex-col justify-between"
+          >
+            <CardItem
+              type={exportCurrentItem.type}
+              data={exportCurrentItem.data}
+              schoolInfo={schoolInfo}
+              cardTheme={cardTheme}
+              qrUrl={
+                exportCurrentItem.type === 'siswa'
+                  ? studentQrUrls[exportCurrentItem.data.id]
+                  : teacherQrUrls[exportCurrentItem.data.id]
+              }
+              onTriggerPhotoUpload={() => {}}
+              onRemovePhoto={() => {}}
+              onPrintSingle={() => {}}
+              isExport={true}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1198,6 +1849,8 @@ interface CardItemProps {
   onTriggerPhotoUpload: () => void;
   onRemovePhoto: () => void;
   onPrintSingle: () => void;
+  onDownloadJpgCustom?: () => void;
+  isExport?: boolean;
 }
 
 const CardItem: React.FC<CardItemProps> = ({
@@ -1209,6 +1862,8 @@ const CardItem: React.FC<CardItemProps> = ({
   onTriggerPhotoUpload,
   onRemovePhoto,
   onPrintSingle,
+  onDownloadJpgCustom,
+  isExport = false,
 }) => {
   const isStudent = type === 'siswa';
   const student = isStudent ? (data as Student) : null;
@@ -1241,15 +1896,25 @@ const CardItem: React.FC<CardItemProps> = ({
 
   return (
     <div
-      className={`relative w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border-2 ${borderClass} transition-all duration-200 hover:shadow-2xl flex flex-col justify-between`}
-      style={{ minHeight: '235px' }}
+      className={`relative w-full ${
+        isExport
+          ? 'h-full border-4 rounded-3xl'
+          : 'max-w-md mx-auto rounded-2xl border-2'
+      } bg-white shadow-xl overflow-hidden ${borderClass} transition-all duration-200 hover:shadow-2xl flex flex-col justify-between`}
+      style={{ minHeight: isExport ? '100%' : '235px' }}
     >
       {/* Top Card Header */}
       <div
-        className={`bg-gradient-to-r ${headerGradient} text-white p-3 border-b-2 flex items-center justify-between gap-2 shadow-inner`}
+        className={`bg-gradient-to-r ${headerGradient} text-white ${
+          isExport ? 'p-4 border-b-4' : 'p-3 border-b-2'
+        } flex items-center justify-between gap-2 shadow-inner`}
       >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-white text-slate-950 rounded-lg p-0.5 flex items-center justify-center shrink-0 border border-amber-300 shadow overflow-hidden">
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`${
+              isExport ? 'w-12 h-12 rounded-xl p-1' : 'w-8 h-8 rounded-lg p-0.5'
+            } bg-white text-slate-950 flex items-center justify-center shrink-0 border border-amber-300 shadow overflow-hidden`}
+          >
             {schoolInfo.logoUrl ? (
               <img
                 src={schoolInfo.logoUrl}
@@ -1257,34 +1922,58 @@ const CardItem: React.FC<CardItemProps> = ({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <Award className="w-6 h-6 text-amber-600" />
+              <Award className={`${isExport ? 'w-8 h-8' : 'w-6 h-6'} text-amber-600`} />
             )}
           </div>
           <div>
-            <span className="text-[9px] font-black tracking-widest text-amber-300 uppercase block leading-none">
+            <span
+              className={`${
+                isExport ? 'text-xs' : 'text-[9px]'
+              } font-black tracking-widest text-amber-300 uppercase block leading-none`}
+            >
               KARTU ANGGOTA {isStudent ? 'SISWA' : 'GURU & PTK'}
             </span>
-            <h3 className="font-extrabold text-xs uppercase tracking-wide text-white leading-tight">
+            <h3
+              className={`font-extrabold ${
+                isExport ? 'text-base sm:text-lg' : 'text-xs'
+              } uppercase tracking-wide text-white leading-tight`}
+            >
               {schoolInfo.namaSekolah}
             </h3>
-            <span className="text-[8px] text-slate-300 block line-clamp-1">
+            <span
+              className={`${
+                isExport ? 'text-xs' : 'text-[8px]'
+              } text-slate-300 block line-clamp-1`}
+            >
               NPSN: {schoolInfo.npsn} • {schoolInfo.kabupatenKota}
             </span>
           </div>
         </div>
 
         <span
-          className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow ${badgeBg}`}
+          className={`${
+            isExport ? 'text-xs px-3.5 py-1.5' : 'text-[9px] px-2 py-0.5'
+          } font-black uppercase rounded-full shadow ${badgeBg}`}
         >
           {isStudent ? student?.kelas : teacher?.statusPtk}
         </span>
       </div>
 
       {/* Card Body Content */}
-      <div className="p-3 bg-gradient-to-br from-slate-50 via-white to-amber-50/20 grid grid-cols-12 gap-3 items-center flex-1">
+      <div
+        className={`${
+          isExport ? 'p-5 gap-5' : 'p-3 gap-3'
+        } bg-gradient-to-br from-slate-50 via-white to-amber-50/20 grid grid-cols-12 items-center flex-1`}
+      >
         {/* Photo Box with interactive Upload */}
         <div className="col-span-3 flex flex-col items-center gap-1 relative group">
-          <div className="w-20 h-24 bg-slate-200 border-2 border-slate-400 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-100 to-slate-300">
+          <div
+            className={`${
+              isExport
+                ? 'w-28 h-36 border-3 rounded-2xl shadow-md'
+                : 'w-20 h-24 border-2 rounded-xl shadow-inner'
+            } bg-slate-200 border-slate-400 overflow-hidden flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-100 to-slate-300`}
+          >
             {fotoUrl ? (
               <img
                 src={fotoUrl}
@@ -1293,12 +1982,20 @@ const CardItem: React.FC<CardItemProps> = ({
               />
             ) : (
               <div className="text-center p-1">
-                <div className="w-10 h-10 bg-amber-400/30 text-slate-800 rounded-full flex items-center justify-center mx-auto border border-amber-400/50">
-                  <span className="font-black text-sm">
+                <div
+                  className={`${
+                    isExport ? 'w-14 h-14' : 'w-10 h-10'
+                  } bg-amber-400/30 text-slate-800 rounded-full flex items-center justify-center mx-auto border border-amber-400/50`}
+                >
+                  <span className={`font-black ${isExport ? 'text-xl' : 'text-sm'}`}>
                     {data.jenisKelamin === 'L' ? '👦' : '👧'}
                   </span>
                 </div>
-                <span className="text-[7px] font-extrabold text-slate-600 uppercase block mt-1">
+                <span
+                  className={`${
+                    isExport ? 'text-[9px]' : 'text-[7px]'
+                  } font-extrabold text-slate-600 uppercase block mt-1`}
+                >
                   TANPA FOTO
                 </span>
               </div>
@@ -1327,28 +2024,50 @@ const CardItem: React.FC<CardItemProps> = ({
 
           <button
             onClick={onTriggerPhotoUpload}
-            className="no-print text-[8px] text-amber-700 font-extrabold underline hover:text-amber-900"
+            className={`no-print ${
+              isExport ? 'text-xs' : 'text-[8px]'
+            } text-amber-700 font-extrabold underline hover:text-amber-900`}
           >
             {fotoUrl ? 'Ganti Foto' : '+ Unggah Foto'}
           </button>
         </div>
 
         {/* Biodata Section */}
-        <div className="col-span-6 space-y-1 text-slate-900 text-xs">
+        <div
+          className={`col-span-6 ${
+            isExport ? 'space-y-2 text-sm' : 'space-y-1 text-xs'
+          } text-slate-900`}
+        >
           <div>
-            <span className="text-[9px] font-bold text-slate-500 uppercase block leading-none">
+            <span
+              className={`${
+                isExport ? 'text-xs' : 'text-[9px]'
+              } font-bold text-slate-500 uppercase block leading-none`}
+            >
               NAMA LENGKAP {isStudent ? 'SISWA' : 'GURU'}
             </span>
-            <h4 className="font-black text-sm text-amber-950 uppercase line-clamp-1">
+            <h4
+              className={`font-black ${
+                isExport ? 'text-lg sm:text-xl' : 'text-sm'
+              } text-amber-950 uppercase line-clamp-1`}
+            >
               {data.nama}
             </h4>
           </div>
 
-          <div className="bg-slate-100/90 p-1.5 rounded-lg border border-slate-200 text-[10px] space-y-0.5">
+          <div
+            className={`bg-slate-100/90 ${
+              isExport ? 'p-2.5 rounded-xl text-xs space-y-1' : 'p-1.5 rounded-lg text-[10px] space-y-0.5'
+            } border border-slate-200`}
+          >
             {isStudent ? (
               <div className="grid grid-cols-2 gap-1">
                 <div>
-                  <span className="text-[8px] font-bold text-slate-500 block">
+                  <span
+                    className={`${
+                      isExport ? 'text-xs' : 'text-[8px]'
+                    } font-bold text-slate-500 block`}
+                  >
                     NIS
                   </span>
                   <span className="font-mono font-extrabold text-slate-900">
@@ -1356,7 +2075,11 @@ const CardItem: React.FC<CardItemProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-[8px] font-bold text-slate-500 block">
+                  <span
+                    className={`${
+                      isExport ? 'text-xs' : 'text-[8px]'
+                    } font-bold text-slate-500 block`}
+                  >
                     NISN
                   </span>
                   <span className="font-mono font-extrabold text-slate-900">
@@ -1366,7 +2089,11 @@ const CardItem: React.FC<CardItemProps> = ({
               </div>
             ) : (
               <div>
-                <span className="text-[8px] font-bold text-slate-500 block">
+                <span
+                  className={`${
+                    isExport ? 'text-xs' : 'text-[8px]'
+                  } font-bold text-slate-500 block`}
+                >
                   NIP / NUPTK
                 </span>
                 <span className="font-mono font-extrabold text-slate-900 block truncate">
@@ -1376,7 +2103,11 @@ const CardItem: React.FC<CardItemProps> = ({
             )}
           </div>
 
-          <div className="text-[9px] text-slate-600 space-y-0.5 pt-0.5">
+          <div
+            className={`${
+              isExport ? 'text-xs space-y-1 pt-1' : 'text-[9px] space-y-0.5 pt-0.5'
+            } text-slate-600`}
+          >
             <p className="line-clamp-1">
               <strong className="text-slate-800">
                 {isStudent ? 'Rombel:' : 'Jabatan:'}
@@ -1392,7 +2123,11 @@ const CardItem: React.FC<CardItemProps> = ({
 
         {/* QR Code Box */}
         <div className="col-span-3 flex flex-col items-center justify-center border-l border-slate-200 pl-2">
-          <div className="w-20 h-20 bg-white p-1 rounded-xl border border-slate-300 shadow-sm flex items-center justify-center">
+          <div
+            className={`${
+              isExport ? 'w-28 h-28 p-2 rounded-2xl border-2' : 'w-20 h-20 p-1 rounded-xl border'
+            } bg-white border-slate-300 shadow-sm flex items-center justify-center`}
+          >
             {qrUrl ? (
               <img
                 src={qrUrl}
@@ -1400,30 +2135,47 @@ const CardItem: React.FC<CardItemProps> = ({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <QrCode className="w-12 h-12 text-slate-400" />
+              <QrCode className={`${isExport ? 'w-16 h-16' : 'w-12 h-12'} text-slate-400`} />
             )}
           </div>
-          <span className="text-[8px] font-mono font-black text-slate-600 mt-1 uppercase text-center">
+          <span
+            className={`${
+              isExport ? 'text-xs mt-2' : 'text-[8px] mt-1'
+            } font-mono font-black text-slate-600 uppercase text-center`}
+          >
             SCAN ABSENSI
           </span>
         </div>
       </div>
 
       {/* Card Footer Signature & Single Print Button */}
-      <div className="bg-slate-900 text-slate-300 text-[8px] px-3 py-1.5 flex items-center justify-between border-t border-slate-800">
-        <span className="font-mono font-bold text-amber-400">
+      <div
+        className={`bg-slate-900 text-slate-300 ${
+          isExport ? 'text-xs px-5 py-2.5 border-t-2' : 'text-[8px] px-3 py-1.5 border-t'
+        } flex items-center justify-between border-slate-800`}
+      >
+        <span className={`font-mono font-bold text-amber-400 ${isExport ? 'text-xs' : 'text-[8px]'}`}>
           {schoolInfo.kabupatenKota}, 2026
         </span>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {onDownloadJpgCustom && (
+            <button
+              onClick={onDownloadJpgCustom}
+              className="no-print bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] px-2 py-0.5 rounded shadow border border-blue-400 transition-transform active:scale-95 flex items-center gap-1 cursor-pointer"
+              title="Download Kartu Ini Sebagai Gambar JPG/PNG Ukuran Custom"
+            >
+              <Download className="w-3 h-3" /> JPG Custom
+            </button>
+          )}
           <button
             onClick={onPrintSingle}
-            className="no-print bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded shadow border border-amber-200 transition-transform active:scale-95 flex items-center gap-1"
+            className="no-print bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded shadow border border-amber-200 transition-transform active:scale-95 flex items-center gap-1 cursor-pointer"
             title="Cetak/Download PDF Kartu Ini Saja"
           >
-            <Printer className="w-3 h-3" /> Cetak Kartu Ini
+            <Printer className="w-3 h-3" /> Cetak
           </button>
-          <span className="block font-bold text-slate-200 uppercase">
+          <span className={`block font-bold text-slate-200 uppercase ${isExport ? 'text-xs' : 'text-[8px]'}`}>
             Kepala Sekolah: {schoolInfo.namaKepalaSekolah}
           </span>
         </div>

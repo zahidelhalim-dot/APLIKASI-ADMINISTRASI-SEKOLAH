@@ -212,7 +212,7 @@ export const RekapitulasiView: React.FC<RekapitulasiViewProps> = ({
         <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-sm text-center">
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Total Personel</p>
           <p className="text-lg font-black text-slate-900 mt-0.5">{countPeople} Personel</p>
-          <p className="text-[10px] text-slate-600 font-medium">{targetType === 'siswa' ? `Kelas ${selectedKelas}` : 'Guru & PTK'}</p>
+          <p className="text-[10px] text-slate-600 font-medium">{targetType === 'siswa' ? 'Siswa & Siswi' : 'Guru & PTK'}</p>
         </div>
 
         <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 shadow-sm text-center">
