@@ -2023,13 +2023,13 @@ const CardItem: React.FC<CardItemProps> = ({
         </div>
       </div>
 
-      {/* Card Footer Signature */}
+      {/* Card Footer Motto */}
       <div className="bg-slate-950 text-white text-[8.5px] px-3.5 py-1.5 flex items-center justify-between border-t border-slate-800 shrink-0 h-[30px]">
         <span className="font-mono font-bold text-amber-400 uppercase truncate">
           {schoolInfo.kabupatenKota}, 2026
         </span>
         <span className="font-extrabold text-white uppercase tracking-tight truncate ml-2">
-          KEPALA SEKOLAH: {schoolInfo.namaKepalaSekolah}
+          MOTTO: {schoolInfo.mottoSekolah || 'BERAKHLAK MULIA, CERDAS & BERPRESTASI'}
         </span>
       </div>
     </div>

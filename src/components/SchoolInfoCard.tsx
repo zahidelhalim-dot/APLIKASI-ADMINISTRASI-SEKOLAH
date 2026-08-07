@@ -216,6 +216,12 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1">
+                <span className="font-bold text-slate-700">MOTTO SEKOLAH</span>
+                <span className="col-span-2 font-bold text-emerald-950 uppercase truncate">
+                  : {schoolInfo.mottoSekolah || 'BERAKHLAK MULIA, CERDAS & BERPRESTASI'}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
                 <span className="font-bold text-slate-700">SEMESTER / THN</span>
                 <span className="col-span-2 font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                   : {schoolInfo.semester} (
@@ -397,6 +403,17 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                         value={formData.alamat}
                         onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
                         required
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-700 mb-1">Motto Sekolah</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: BERAKHLAK MULIA, CERDAS & BERPRESTASI"
+                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
+                        value={formData.mottoSekolah || ''}
+                        onChange={(e) => setFormData({ ...formData, mottoSekolah: e.target.value })}
                       />
                     </div>
 

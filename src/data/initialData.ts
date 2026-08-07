@@ -103,6 +103,7 @@ export const INITIAL_SCHOOL_INFO: SchoolInfo = {
   nipGuruKelas: '19820415 200801 1 005',
   logoUrl: '',
   dashboardBannerUrl: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1200&q=80',
+  mottoSekolah: 'BERAKHLAK MULIA, CERDAS & BERPRESTASI',
 };
 
 export const INITIAL_CLASSES: ClassCategory[] = [

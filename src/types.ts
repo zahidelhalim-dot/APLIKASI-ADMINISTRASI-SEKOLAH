@@ -18,6 +18,7 @@ export interface SchoolInfo {
   nipGuruKelas: string;
   logoUrl?: string;
   dashboardBannerUrl?: string;
+  mottoSekolah?: string;
 }
 
 export interface ClassCategory {
