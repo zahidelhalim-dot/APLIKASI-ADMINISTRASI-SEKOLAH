@@ -372,6 +372,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   />
                 </button>
+
+                {/* Sub Menu: Migrasi & Pindah Kelas */}
+                <button
+                  onClick={() => handleNavClick('migrasi_kelas')}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-bold text-xs transition-all ${
+                    activeView === 'migrasi_kelas'
+                      ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <GraduationCap
+                      className={`w-4 h-4 shrink-0 ${
+                        activeView === 'migrasi_kelas' ? 'text-slate-950' : 'text-purple-400'
+                      }`}
+                    />
+                    <span>Migrasi & Pindah Kelas</span>
+                  </div>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded-md font-extrabold uppercase ${
+                      activeView === 'migrasi_kelas'
+                        ? 'bg-slate-950 text-amber-300'
+                        : 'bg-purple-950/80 text-purple-300 border border-purple-800/60'
+                    }`}
+                  >
+                    Naik Kelas
+                  </span>
+                </button>
               </div>
             )}
           </div>
@@ -542,17 +570,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>{classicTheme ? 'Tema Klasik' : 'Tema Modern'}</span>
             </button>
 
-            <button
-              onClick={() => {
-                if (confirm('Reset ulang data absensi dan profil ke awal?')) {
-                  onResetData();
-                }
-              }}
-              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] border border-slate-700 transition-colors"
-              title="Reset Data Ke Bawaan"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
+            {currentUser?.role === 'admin' && (
+              <button
+                onClick={() => {
+                  if (confirm('Reset ulang data absensi dan profil ke awal?')) {
+                    onResetData();
+                  }
+                }}
+                className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[11px] border border-slate-700 transition-colors"
+                title="Reset Data Ke Bawaan (Khusus Admin)"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="text-[10px] text-slate-500 text-center font-mono">

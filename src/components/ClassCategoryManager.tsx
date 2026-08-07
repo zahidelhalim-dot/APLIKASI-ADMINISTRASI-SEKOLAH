@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClassCategory, Teacher, Student } from '../types';
+import { ClassCategory, Teacher, Student, UserAccount } from '../types';
 import { Layers, UserCheck, Plus, Edit2, Trash2, CheckCircle2, Users, BookOpen, AlertCircle } from 'lucide-react';
 
 interface ClassCategoryManagerProps {
@@ -10,6 +10,7 @@ interface ClassCategoryManagerProps {
   onUpdateClass: (updatedClass: ClassCategory) => void;
   onDeleteClass: (classId: string) => void;
   onSelectClassView?: (className: string) => void;
+  currentUser?: UserAccount | null;
 }
 
 export const ClassCategoryManager: React.FC<ClassCategoryManagerProps> = ({
@@ -20,7 +21,9 @@ export const ClassCategoryManager: React.FC<ClassCategoryManagerProps> = ({
   onUpdateClass,
   onDeleteClass,
   onSelectClassView,
+  currentUser,
 }) => {
+  const isAdmin = !currentUser || currentUser.role === 'admin';
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassCategory | null>(null);
 
@@ -32,6 +35,10 @@ export const ClassCategoryManager: React.FC<ClassCategoryManagerProps> = ({
   const [toastMsg, setToastMsg] = useState('');
 
   const handleOpenAddModal = () => {
+    if (!isAdmin) {
+      alert('Akses Dibatasi: Hanya Administrator yang berhak menambah kelas baru.');
+      return;
+    }
     setEditingClass(null);
     setNamaKelas('');
     setWaliKelasId(teachers[0]?.id || '');
@@ -40,6 +47,10 @@ export const ClassCategoryManager: React.FC<ClassCategoryManagerProps> = ({
   };
 
   const handleOpenEditModal = (cls: ClassCategory) => {
+    if (!isAdmin) {
+      alert('Akses Dibatasi: Hanya Administrator yang berhak mengedit data kelas.');
+      return;
+    }
     setEditingClass(cls);
     setNamaKelas(cls.namaKelas);
     setWaliKelasId(cls.waliKelasId);
@@ -99,12 +110,18 @@ export const ClassCategoryManager: React.FC<ClassCategoryManagerProps> = ({
           </p>
         </div>
 
-        <button
-          onClick={handleOpenAddModal}
-          className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs rounded-lg shadow-md transition-all flex items-center gap-1.5 active:scale-95"
-        >
-          <Plus className="w-4 h-4" /> Tambah Kelas Baru
-        </button>
+        {isAdmin ? (
+          <button
+            onClick={handleOpenAddModal}
+            className="px-4 py-2 bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xs rounded-lg shadow-md transition-all flex items-center gap-1.5 active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> Tambah Kelas Baru
+          </button>
+        ) : (
+          <span className="bg-amber-400/20 text-amber-200 border border-amber-400/40 text-xs font-bold px-3 py-1.5 rounded-lg">
+            Akses Edit/Tambah Khusus Admin
+          </span>
+        )}
       </div>
 
       {/* Summary Widget */}

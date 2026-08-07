@@ -49,12 +49,13 @@ export function downloadStudentTemplate() {
     ['1004', '0123456704', 'Zahra Amelia', 'P', 'Kelas III', '6311014311170004', 'Balangan', '2017-11-03', 'Desa Batu Piring RT 02', 'Fauzi Safitri', '085388889900', 'Islam'],
   ];
 
+  // Use semicolon for better compatibility with Indonesian Excel defaults, or comma with BOM
   const csvContent = [
-    headers.join(','),
-    ...sampleRows.map((row) => row.map((val) => `"${val}"`).join(',')),
+    headers.join(';'),
+    ...sampleRows.map((row) => row.map((val) => `"${val}"`).join(';')),
   ].join('\r\n');
 
-  // Add UTF-8 BOM so Excel opens accents and columns properly
+  // Add UTF-8 BOM so Excel opens columns cleanly
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -130,8 +131,8 @@ export function downloadTeacherTemplate() {
   ];
 
   const csvContent = [
-    headers.join(','),
-    ...sampleRows.map((row) => row.map((val) => `"${val}"`).join(',')),
+    headers.join(';'),
+    ...sampleRows.map((row) => row.map((val) => `"${val}"`).join(';')),
   ].join('\r\n');
 
   const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });

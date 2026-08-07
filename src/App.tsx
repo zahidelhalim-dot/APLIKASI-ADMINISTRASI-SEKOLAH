@@ -367,6 +367,7 @@ export default function App() {
               onAddClass={handleAddClass}
               onUpdateClass={handleUpdateClass}
               onDeleteClass={handleDeleteClass}
+              currentUser={currentUser}
             />
           )}
 
@@ -422,6 +423,7 @@ export default function App() {
               schoolInfo={schoolInfo}
               selectedKelas={selectedKelas}
               onSelectKelas={setSelectedKelas}
+              currentUser={currentUser}
             />
           )}
 
@@ -434,6 +436,7 @@ export default function App() {
               onDeleteTeacher={handleDeleteTeacher}
               onImportTeachers={handleImportTeachers}
               schoolInfo={schoolInfo}
+              currentUser={currentUser}
             />
           )}
 

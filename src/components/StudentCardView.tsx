@@ -997,8 +997,8 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     </button>
                   </div>
 
-                  <div className="py-2 flex justify-center">
-                    <CardItem
+                  <div className="py-2 flex justify-center w-full">
+                    <CardWrapper
                       type={singlePrintItem.type}
                       data={singlePrintItem.data}
                       schoolInfo={schoolInfo}
@@ -1061,9 +1061,6 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                         ? studentQrUrls[singlePrintItem.data.id]
                         : teacherQrUrls[singlePrintItem.data.id]
                     }
-                    onTriggerPhotoUpload={() => {}}
-                    onRemovePhoto={() => {}}
-                    onPrintSingle={() => {}}
                   />
                 </div>
               </div>
@@ -1081,8 +1078,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                 Kartu {cardTarget === 'siswa' ? 'Siswa' : 'Guru'} Siap Cetak
               </span>
               <span className="text-amber-700 font-mono">
-                *Klik tombol "🖨️ Cetak Kartu Ini" pada setiap kartu untuk cetak
-                per individu (1-per-1)
+                *Klik tombol "🖨️ Cetak" pada setiap kartu untuk cetak per individu
               </span>
             </div>
 
@@ -1094,10 +1090,10 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     Tidak ada siswa yang sesuai dengan filter kelas / pencarian.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 card-grid-print">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 card-grid-print">
                     {displayStudents.map((s) => (
-                      <div key={s.id} className="card-item-container">
-                        <CardItem
+                      <div key={s.id} className="card-item-container flex justify-center">
+                        <CardWrapper
                           type="siswa"
                           data={s}
                           schoolInfo={schoolInfo}
@@ -1125,10 +1121,10 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     Tidak ada data guru yang sesuai dengan pencarian.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 card-grid-print">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5 card-grid-print">
                     {displayTeachers.map((t) => (
-                      <div key={t.id} className="card-item-container">
-                        <CardItem
+                      <div key={t.id} className="card-item-container flex justify-center">
+                        <CardWrapper
                           type="guru"
                           data={t}
                           schoolInfo={schoolInfo}
@@ -1842,8 +1838,206 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   );
 };
 
-// COMPONENT: CARD ITEM (Render Student or Teacher ID Card)
+// COMPONENT: CARD ITEM (Pure Card Artwork Rendering)
 interface CardItemProps {
+  type: 'siswa' | 'guru';
+  data: Student | Teacher;
+  schoolInfo: SchoolInfo;
+  cardTheme: 'amber' | 'emerald' | 'blue' | 'purple';
+  qrUrl?: string;
+  onTriggerPhotoUpload?: () => void;
+}
+
+const CardItem: React.FC<CardItemProps> = ({
+  type,
+  data,
+  schoolInfo,
+  cardTheme,
+  qrUrl,
+  onTriggerPhotoUpload,
+}) => {
+  const isStudent = type === 'siswa';
+  const student = isStudent ? (data as Student) : null;
+  const teacher = !isStudent ? (data as Teacher) : null;
+
+  // Dynamic Card Theme Classes
+  let headerGradient = 'from-amber-600 via-amber-700 to-amber-800 border-amber-400/60';
+  let borderClass = 'border-amber-600';
+  let subTitleColor = 'text-amber-300';
+
+  if (cardTheme === 'emerald') {
+    headerGradient = 'from-emerald-700 via-teal-800 to-emerald-950 border-emerald-400/60';
+    borderClass = 'border-emerald-600';
+    subTitleColor = 'text-emerald-300';
+  } else if (cardTheme === 'blue') {
+    headerGradient = 'from-blue-800 via-indigo-900 to-slate-950 border-blue-400/60';
+    borderClass = 'border-blue-600';
+    subTitleColor = 'text-blue-300';
+  } else if (cardTheme === 'purple') {
+    headerGradient = 'from-purple-800 via-indigo-900 to-slate-950 border-purple-400/60';
+    borderClass = 'border-purple-600';
+    subTitleColor = 'text-purple-300';
+  }
+
+  const fotoUrl = isStudent ? student?.fotoUrl : teacher?.fotoUrl;
+
+  return (
+    <div
+      className={`relative w-full aspect-[480/303] bg-white rounded-2xl shadow-lg overflow-hidden border-2 ${borderClass} flex flex-col justify-between text-slate-900 select-none box-border shrink-0`}
+    >
+      {/* Top Card Header */}
+      <div
+        className={`bg-gradient-to-r ${headerGradient} text-white px-3.5 py-2 flex items-center justify-between border-b-2 gap-2 shadow-inner shrink-0 h-[64px]`}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-10 h-10 bg-white text-slate-950 rounded-xl p-0.5 flex items-center justify-center shrink-0 border border-amber-300 shadow-sm overflow-hidden">
+            {schoolInfo.logoUrl ? (
+              <img
+                src={schoolInfo.logoUrl}
+                alt="Logo Sekolah"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <Award className="w-6 h-6 text-amber-600" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <span
+              className={`text-[8.5px] font-black tracking-widest ${subTitleColor} uppercase block leading-none truncate`}
+            >
+              KARTU ANGGOTA {isStudent ? 'SISWA' : 'GURU & PTK'}
+            </span>
+            <h3 className="font-extrabold text-xs sm:text-sm uppercase tracking-wide text-white leading-tight truncate">
+              {schoolInfo.namaSekolah}
+            </h3>
+            <span className="text-[8px] text-amber-100/90 font-medium block leading-tight truncate">
+              NPSN: {schoolInfo.npsn} • {schoolInfo.kabupatenKota}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Card Body Content */}
+      <div className="px-3.5 py-2 bg-gradient-to-br from-slate-50 via-white to-amber-50/20 grid grid-cols-12 gap-2.5 items-center flex-1 overflow-hidden">
+        {/* Photo Box */}
+        <div className="col-span-3 flex flex-col items-center justify-center relative group">
+          <div
+            onClick={onTriggerPhotoUpload}
+            className={`w-[84px] h-[112px] sm:w-[92px] sm:h-[120px] bg-slate-200 border-2 border-slate-300 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-100 to-slate-300 ${
+              onTriggerPhotoUpload ? 'cursor-pointer hover:border-amber-500' : ''
+            }`}
+            title={onTriggerPhotoUpload ? 'Klik untuk mengunggah / mengganti foto' : ''}
+          >
+            {fotoUrl ? (
+              <img
+                src={fotoUrl}
+                alt={data.nama}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-center p-1">
+                <div className="w-9 h-9 bg-amber-400/30 text-slate-800 rounded-full flex items-center justify-center mx-auto border border-amber-400/50">
+                  <span className="font-black text-sm">
+                    {data.jenisKelamin === 'L' ? '👦' : '👧'}
+                  </span>
+                </div>
+                <span className="text-[7.5px] font-extrabold text-slate-600 uppercase block mt-1">
+                  TANPA FOTO
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Biodata Section */}
+        <div className="col-span-6 space-y-1 text-slate-900 min-w-0 overflow-hidden">
+          <div>
+            <span className="text-[8px] font-extrabold text-slate-500 uppercase tracking-wider block leading-none">
+              NAMA LENGKAP {isStudent ? 'SISWA' : 'GURU'}
+            </span>
+            <h4 className="font-black text-xs sm:text-sm text-amber-950 uppercase truncate leading-tight mt-0.5">
+              {data.nama}
+            </h4>
+          </div>
+
+          <div className="bg-slate-100/90 p-1.5 rounded-xl border border-slate-200/90 text-[9.5px]">
+            {isStudent ? (
+              <div className="grid grid-cols-2 gap-1">
+                <div className="min-w-0">
+                  <span className="text-[7.5px] font-bold text-slate-500 block leading-none">
+                    NIS
+                  </span>
+                  <span className="font-mono font-extrabold text-slate-900 text-[10px] block truncate">
+                    {student?.nis || '-'}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <span className="text-[7.5px] font-bold text-slate-500 block leading-none">
+                    NISN
+                  </span>
+                  <span className="font-mono font-extrabold text-slate-900 text-[10px] block truncate">
+                    {student?.nisn || '-'}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="min-w-0">
+                <span className="text-[7.5px] font-bold text-slate-500 block leading-none">
+                  NIP / NUPTK
+                </span>
+                <span className="font-mono font-extrabold text-slate-900 text-[10px] block truncate">
+                  {teacher?.nip || '-'}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="text-[8.5px] text-slate-700 font-medium space-y-0.5 pt-0.5">
+            <p className="truncate">
+              <strong className="text-slate-900 font-extrabold">Alamat:</strong>{' '}
+              {schoolInfo.alamat || schoolInfo.kabupatenKota}
+            </p>
+            <p className="truncate">
+              <strong className="text-slate-900 font-extrabold">Berlaku:</strong>{' '}
+              {isStudent ? 'selama menjadi siswa/i' : 'selama menjadi PTK'}
+            </p>
+          </div>
+        </div>
+
+        {/* QR Code Box */}
+        <div className="col-span-3 flex flex-col items-center justify-center border-l border-slate-200/80 pl-2">
+          <div className="w-[78px] h-[78px] sm:w-[86px] sm:h-[86px] bg-white p-1 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+            {qrUrl ? (
+              <img
+                src={qrUrl}
+                alt="QR Code"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <QrCode className="w-12 h-12 text-slate-400" />
+            )}
+          </div>
+          <span className="text-[7.5px] font-mono font-black text-slate-600 mt-1 uppercase text-center tracking-wider">
+            SCAN ABSENSI
+          </span>
+        </div>
+      </div>
+
+      {/* Card Footer Signature */}
+      <div className="bg-slate-950 text-white text-[8.5px] px-3.5 py-1.5 flex items-center justify-between border-t border-slate-800 shrink-0 h-[30px]">
+        <span className="font-mono font-bold text-amber-400 uppercase truncate">
+          {schoolInfo.kabupatenKota}, 2026
+        </span>
+        <span className="font-extrabold text-white uppercase tracking-tight truncate ml-2">
+          KEPALA SEKOLAH: {schoolInfo.namaKepalaSekolah}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// COMPONENT: CARD WRAPPER (Renders CardItem + Screen Action Toolbar)
+interface CardWrapperProps {
   type: 'siswa' | 'guru';
   data: Student | Teacher;
   schoolInfo: SchoolInfo;
@@ -1852,10 +2046,10 @@ interface CardItemProps {
   onTriggerPhotoUpload: () => void;
   onRemovePhoto: () => void;
   onPrintSingle: () => void;
-  onDownloadJpgCustom?: () => void;
+  onDownloadJpgCustom: () => void;
 }
 
-const CardItem: React.FC<CardItemProps> = ({
+const CardWrapper: React.FC<CardWrapperProps> = ({
   type,
   data,
   schoolInfo,
@@ -1867,218 +2061,56 @@ const CardItem: React.FC<CardItemProps> = ({
   onDownloadJpgCustom,
 }) => {
   const isStudent = type === 'siswa';
-  const student = isStudent ? (data as Student) : null;
-  const teacher = !isStudent ? (data as Teacher) : null;
-
-  // Dynamic Card Theme Classes
-  let headerGradient =
-    'from-amber-600 via-amber-700 to-amber-800 border-amber-500';
-  let borderClass = 'border-amber-600';
-
-  if (cardTheme === 'emerald') {
-    headerGradient =
-      'from-emerald-700 via-teal-800 to-emerald-950 border-emerald-500';
-    borderClass = 'border-emerald-600';
-  } else if (cardTheme === 'blue') {
-    headerGradient =
-      'from-blue-800 via-indigo-900 to-slate-950 border-blue-500';
-    borderClass = 'border-blue-600';
-  } else if (cardTheme === 'purple') {
-    headerGradient =
-      'from-purple-800 via-indigo-900 to-slate-950 border-purple-500';
-    borderClass = 'border-purple-600';
-  }
-
-  const fotoUrl = isStudent ? student?.fotoUrl : teacher?.fotoUrl;
+  const fotoUrl = isStudent ? (data as Student).fotoUrl : (data as Teacher).fotoUrl;
 
   return (
-    <div
-      className={`relative w-full max-w-md mx-auto bg-white rounded-2xl shadow-xl overflow-hidden border-2 ${borderClass} transition-all duration-200 hover:shadow-2xl flex flex-col justify-between`}
-      style={{ minHeight: '235px' }}
-    >
-      {/* Top Card Header */}
-      <div
-        className={`bg-gradient-to-r ${headerGradient} text-white p-3 border-b-2 flex items-center justify-between gap-2 shadow-inner`}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 bg-white text-slate-950 rounded-lg p-0.5 flex items-center justify-center shrink-0 border border-amber-300 shadow overflow-hidden">
-            {schoolInfo.logoUrl ? (
-              <img
-                src={schoolInfo.logoUrl}
-                alt="Logo Sekolah"
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <Award className="w-6 h-6 text-amber-600" />
-            )}
-          </div>
-          <div>
-            <span className="text-[9px] font-black tracking-widest text-amber-300 uppercase block leading-none">
-              KARTU ANGGOTA {isStudent ? 'SISWA' : 'GURU & PTK'}
-            </span>
-            <h3 className="font-extrabold text-xs uppercase tracking-wide text-white leading-tight">
-              {schoolInfo.namaSekolah}
-            </h3>
-            <span className="text-[8px] text-slate-300 block line-clamp-1">
-              NPSN: {schoolInfo.npsn} • {schoolInfo.kabupatenKota}
-            </span>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col items-center space-y-2 w-full max-w-md mx-auto">
+      <CardItem
+        type={type}
+        data={data}
+        schoolInfo={schoolInfo}
+        cardTheme={cardTheme}
+        qrUrl={qrUrl}
+        onTriggerPhotoUpload={onTriggerPhotoUpload}
+      />
 
-      {/* Card Body Content */}
-      <div className="p-3 bg-gradient-to-br from-slate-50 via-white to-amber-50/20 grid grid-cols-12 gap-3 items-center flex-1">
-        {/* Photo Box with interactive Upload */}
-        <div className="col-span-3 flex flex-col items-center gap-1 relative group">
-          <div className="w-20 h-26 bg-slate-200 border-2 border-slate-400 rounded-xl overflow-hidden shadow-inner flex flex-col items-center justify-center relative bg-gradient-to-b from-slate-100 to-slate-300">
-            {fotoUrl ? (
-              <img
-                src={fotoUrl}
-                alt={data.nama}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="text-center p-1">
-                <div className="w-10 h-10 bg-amber-400/30 text-slate-800 rounded-full flex items-center justify-center mx-auto border border-amber-400/50">
-                  <span className="font-black text-sm">
-                    {data.jenisKelamin === 'L' ? '👦' : '👧'}
-                  </span>
-                </div>
-                <span className="text-[7px] font-extrabold text-slate-600 uppercase block mt-1">
-                  TANPA FOTO
-                </span>
-              </div>
-            )}
-
-            {/* Hover Photo Upload Overlay (no-print) */}
-            <div className="no-print absolute inset-0 bg-slate-950/75 text-amber-300 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-1 gap-1">
-              <button
-                onClick={onTriggerPhotoUpload}
-                className="text-[9px] font-bold bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded shadow hover:bg-amber-300 flex items-center gap-0.5"
-                title="Unggah Foto Baru"
-              >
-                <Upload className="w-2.5 h-2.5" /> Foto
-              </button>
-              {fotoUrl && (
-                <button
-                  onClick={onRemovePhoto}
-                  className="text-[8px] font-bold bg-rose-600 text-white px-1 py-0.5 rounded shadow hover:bg-rose-700 flex items-center gap-0.5"
-                  title="Hapus Foto"
-                >
-                  <Trash2 className="w-2.5 h-2.5" /> Hapus
-                </button>
-              )}
-            </div>
-          </div>
-
+      {/* Action Toolbar underneath Card */}
+      <div className="no-print w-full flex items-center justify-between gap-1.5 bg-slate-900/90 text-white p-2 rounded-xl shadow-md border border-slate-800 text-xs">
+        <div className="flex items-center gap-1">
           <button
             onClick={onTriggerPhotoUpload}
-            className="no-print text-[8px] text-amber-700 font-extrabold underline hover:text-amber-900"
+            className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[10px] rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+            title="Unggah Foto Resmi"
           >
-            {fotoUrl ? 'Ganti Foto' : '+ Unggah Foto'}
+            <Upload className="w-3 h-3" />
+            {fotoUrl ? 'Ganti Foto' : '+ Upload Foto'}
           </button>
-        </div>
-
-        {/* Biodata Section */}
-        <div className="col-span-6 space-y-1 text-slate-900 text-xs">
-          <div>
-            <span className="text-[9px] font-bold text-slate-500 uppercase block leading-none">
-              NAMA LENGKAP {isStudent ? 'SISWA' : 'GURU'}
-            </span>
-            <h4 className="font-black text-sm text-amber-950 uppercase line-clamp-1">
-              {data.nama}
-            </h4>
-          </div>
-
-          <div className="bg-slate-100/90 p-1.5 rounded-lg border border-slate-200 text-[10px] space-y-0.5">
-            {isStudent ? (
-              <div className="grid grid-cols-2 gap-1">
-                <div>
-                  <span className="text-[8px] font-bold text-slate-500 block">
-                    NIS
-                  </span>
-                  <span className="font-mono font-extrabold text-slate-900">
-                    {student?.nis}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[8px] font-bold text-slate-500 block">
-                    NISN
-                  </span>
-                  <span className="font-mono font-extrabold text-slate-900">
-                    {student?.nisn}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <span className="text-[8px] font-bold text-slate-500 block">
-                  NIP / NUPTK
-                </span>
-                <span className="font-mono font-extrabold text-slate-900 block truncate">
-                  {teacher?.nip}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="text-[9px] text-slate-600 space-y-0.5 pt-0.5">
-            <p className="line-clamp-1">
-              <strong className="text-slate-800">Alamat:</strong>{' '}
-              {schoolInfo.alamat || schoolInfo.kabupatenKota}
-            </p>
-            <p className="line-clamp-1">
-              <strong className="text-slate-800">Berlaku:</strong>{' '}
-              {isStudent ? 'selama menjadi siswa/i' : 'selama menjadi PTK'}
-            </p>
-          </div>
-        </div>
-
-        {/* QR Code Box */}
-        <div className="col-span-3 flex flex-col items-center justify-center border-l border-slate-200 pl-2">
-          <div className="w-20 h-20 bg-white p-1 rounded-xl border border-slate-300 shadow-sm flex items-center justify-center">
-            {qrUrl ? (
-              <img
-                src={qrUrl}
-                alt="QR Code"
-                className="w-full h-full object-contain"
-              />
-            ) : (
-              <QrCode className="w-12 h-12 text-slate-400" />
-            )}
-          </div>
-          <span className="text-[8px] font-mono font-black text-slate-600 mt-1 uppercase text-center">
-            SCAN ABSENSI
-          </span>
-        </div>
-      </div>
-
-      {/* Card Footer Signature & Single Print Button */}
-      <div className="bg-slate-900 text-slate-300 text-[8px] px-3 py-1.5 flex items-center justify-between border-t border-slate-800">
-        <span className="font-mono font-bold text-amber-400">
-          {schoolInfo.kabupatenKota}, 2026
-        </span>
-
-        <div className="flex items-center gap-1.5">
-          {onDownloadJpgCustom && (
+          {fotoUrl && (
             <button
-              onClick={onDownloadJpgCustom}
-              className="no-print bg-blue-600 hover:bg-blue-500 text-white font-black text-[9px] px-2 py-0.5 rounded shadow border border-blue-400 transition-transform active:scale-95 flex items-center gap-1 cursor-pointer"
-              title="Download Kartu Ini Sebagai Gambar JPG/PNG Ukuran Custom"
+              onClick={onRemovePhoto}
+              className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[10px] rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+              title="Hapus Foto"
             >
-              <Download className="w-3 h-3" /> JPG Custom
+              <Trash2 className="w-3 h-3" /> Hapus
             </button>
           )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onDownloadJpgCustom}
+            className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+            title="Download Gambar JPG Ukuran Custom"
+          >
+            <Download className="w-3 h-3" /> JPG Custom
+          </button>
           <button
             onClick={onPrintSingle}
-            className="no-print bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[9px] px-2 py-0.5 rounded shadow border border-amber-200 transition-transform active:scale-95 flex items-center gap-1 cursor-pointer"
-            title="Cetak/Download PDF Kartu Ini Saja"
+            className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[10px] rounded-lg shadow-xs transition-all flex items-center gap-1 cursor-pointer"
+            title="Cetak / PDF Kartu Ini"
           >
             <Printer className="w-3 h-3" /> Cetak
           </button>
-          <span className="block font-bold text-slate-200 uppercase">
-            Kepala Sekolah: {schoolInfo.namaKepalaSekolah}
-          </span>
         </div>
       </div>
     </div>

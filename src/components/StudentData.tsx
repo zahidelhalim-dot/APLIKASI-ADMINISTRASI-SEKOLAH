@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Student, SchoolInfo, ClassCategory, Teacher } from '../types';
+import { Student, SchoolInfo, ClassCategory, Teacher, UserAccount } from '../types';
 import { ClassFilterBar } from './ClassFilterBar';
-import { Plus, Edit2, Trash2, Search, Users, Check, X, Download, Upload, FileSpreadsheet, FileText, AlertCircle, Eye, Phone, MapPin, User, Calendar, Hash } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Users, Check, X, Download, Upload, FileSpreadsheet, FileText, AlertCircle, Eye, Phone, MapPin, User, Calendar, Hash, ArrowUpRight, GraduationCap } from 'lucide-react';
 import { downloadStudentTemplate, parseStudentsFile, exportStudentsToCSV } from '../utils/templateImporterExporter';
 
 interface StudentDataProps {
@@ -15,6 +15,7 @@ interface StudentDataProps {
   schoolInfo: SchoolInfo;
   selectedKelas: string;
   onSelectKelas: (kelas: string) => void;
+  currentUser?: UserAccount | null;
 }
 
 export const StudentData: React.FC<StudentDataProps> = ({
@@ -28,11 +29,17 @@ export const StudentData: React.FC<StudentDataProps> = ({
   schoolInfo,
   selectedKelas,
   onSelectKelas,
+  currentUser,
 }) => {
+  const isAdmin = !currentUser || currentUser.role === 'admin';
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [viewingDetailStudent, setViewingDetailStudent] = useState<Student | null>(null);
+
+  // Quick Move Class Modal State
+  const [moveClassStudent, setMoveClassStudent] = useState<Student | null>(null);
+  const [targetMoveClass, setTargetMoveClass] = useState<string>(classes[0]?.namaKelas || 'Kelas I');
 
   // Import Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -58,6 +65,10 @@ export const StudentData: React.FC<StudentDataProps> = ({
   });
 
   const handleOpenAdd = () => {
+    if (!isAdmin) {
+      alert('Akses Dibatasi: Hanya Administrator yang berhak menambah siswa baru.');
+      return;
+    }
     setEditingStudent(null);
     setFormData({
       nis: String(1000 + students.length + 1),
@@ -77,6 +88,10 @@ export const StudentData: React.FC<StudentDataProps> = ({
   };
 
   const handleOpenEdit = (student: Student) => {
+    if (!isAdmin) {
+      alert('Akses Dibatasi: Hanya Administrator yang berhak mengedit data siswa.');
+      return;
+    }
     setEditingStudent(student);
     setFormData({
       nis: student.nis,
@@ -93,6 +108,15 @@ export const StudentData: React.FC<StudentDataProps> = ({
       agama: student.agama || 'Islam',
     });
     setIsModalOpen(true);
+  };
+
+  const handleQuickMoveClass = () => {
+    if (!moveClassStudent) return;
+    onUpdateStudent({
+      ...moveClassStudent,
+      kelas: targetMoveClass,
+    });
+    setMoveClassStudent(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -188,27 +212,35 @@ export const StudentData: React.FC<StudentDataProps> = ({
             <span>Download Template</span>
           </button>
 
-          <button
-            onClick={() => {
-              setImportedPreview([]);
-              setImportFileName('');
-              setImportError('');
-              setImportSuccessMsg('');
-              setIsImportModalOpen(true);
-            }}
-            className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow transition-all border border-amber-400"
-            title="Upload/Import data siswa dari file CSV/JSON"
-          >
-            <Upload className="w-4 h-4 text-slate-950" />
-            <span>Import Template / CSV</span>
-          </button>
+          {isAdmin ? (
+            <>
+              <button
+                onClick={() => {
+                  setImportedPreview([]);
+                  setImportFileName('');
+                  setImportError('');
+                  setImportSuccessMsg('');
+                  setIsImportModalOpen(true);
+                }}
+                className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow transition-all border border-amber-400"
+                title="Upload/Import data siswa dari file CSV/JSON"
+              >
+                <Upload className="w-4 h-4 text-slate-950" />
+                <span>Import Template / CSV</span>
+              </button>
 
-          <button
-            onClick={handleOpenAdd}
-            className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all border border-blue-400"
-          >
-            <Plus className="w-4 h-4" /> Tambah Siswa
-          </button>
+              <button
+                onClick={handleOpenAdd}
+                className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all border border-blue-400"
+              >
+                <Plus className="w-4 h-4" /> Tambah Siswa
+              </button>
+            </>
+          ) : (
+            <span className="bg-amber-400/20 text-amber-200 border border-amber-400/40 text-xs font-bold px-3 py-2 rounded-lg">
+              Mode Lihat Saja (Role: Guru / Wali)
+            </span>
+          )}
         </div>
       </div>
 
@@ -313,24 +345,38 @@ export const StudentData: React.FC<StudentDataProps> = ({
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
-                        <button
-                          onClick={() => handleOpenEdit(s)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`Hapus data siswa ${s.nama}?`)) {
-                              onDeleteStudent(s.id);
-                            }
-                          }}
-                          className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
-                          title="Hapus"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {isAdmin && (
+                          <>
+                            <button
+                              onClick={() => {
+                                setMoveClassStudent(s);
+                                setTargetMoveClass(classes.find((c) => c.namaKelas !== s.kelas)?.namaKelas || classes[0]?.namaKelas || 'Kelas I');
+                              }}
+                              className="p-1.5 text-purple-700 hover:bg-purple-50 rounded border border-purple-200"
+                              title="Pindah / Migrasi Ke Kelas Lain"
+                            >
+                              <ArrowUpRight className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEdit(s)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+                              title="Edit"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (confirm(`Hapus data siswa ${s.nama}?`)) {
+                                  onDeleteStudent(s.id);
+                                }
+                              }}
+                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
+                              title="Hapus"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -749,6 +795,30 @@ export const StudentData: React.FC<StudentDataProps> = ({
                 </div>
               )}
 
+              {/* Column Structure Template Guide */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs space-y-1.5">
+                <span className="font-extrabold text-amber-950 flex items-center gap-1">
+                  <FileSpreadsheet className="w-4 h-4 text-amber-700" /> Format Kolom Excel / CSV Template:
+                </span>
+                <p className="text-[11px] text-amber-900 leading-relaxed">
+                  Setiap elemen data siswa menempati kolom terpisah di Excel/CSV:
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-[10px] font-mono font-bold text-slate-800 bg-white/80 p-2 rounded border border-amber-300/60">
+                  <div>1. NIS</div>
+                  <div>2. NISN</div>
+                  <div>3. Nama Lengkap</div>
+                  <div>4. Jenis Kelamin (L/P)</div>
+                  <div>5. Kelas</div>
+                  <div>6. NIK</div>
+                  <div>7. Tempat Lahir</div>
+                  <div>8. Tanggal Lahir</div>
+                  <div>9. Alamat</div>
+                  <div>10. Nama Orang Tua</div>
+                  <div>11. No HP Ortua</div>
+                  <div>12. Agama</div>
+                </div>
+              </div>
+
               {/* Submit / Cancel Buttons */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t">
                 <button
@@ -769,6 +839,71 @@ export const StudentData: React.FC<StudentDataProps> = ({
                   }`}
                 >
                   <Check className="w-4 h-4" /> Impor {importedPreview.length} Data Siswa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Move / Pindah Kelas Modal */}
+      {moveClassStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-4 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                <GraduationCap className="w-5 h-5 text-purple-300" /> Pindah / Mutasi Kelas Siswa
+              </h3>
+              <button
+                onClick={() => setMoveClassStudent(null)}
+                className="text-slate-300 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4 text-xs">
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 space-y-1">
+                <div className="text-[10px] uppercase font-bold text-purple-800">Siswa Yang Dipindahkan:</div>
+                <div className="text-sm font-black text-slate-900">{moveClassStudent.nama}</div>
+                <div className="text-slate-600">
+                  NIS: <span className="font-mono font-bold text-purple-900">{moveClassStudent.nis}</span> • Kelas Asal:{' '}
+                  <span className="font-bold bg-amber-200 text-amber-950 px-1.5 py-0.5 rounded">{moveClassStudent.kelas}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-extrabold text-slate-800 mb-1">
+                  Pilih Kelas Tujuan Baru:
+                </label>
+                <select
+                  value={targetMoveClass}
+                  onChange={(e) => setTargetMoveClass(e.target.value)}
+                  className="w-full p-2.5 border-2 border-purple-400 rounded-xl font-bold text-sm bg-white focus:ring-2 focus:ring-purple-500"
+                >
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.namaKelas}>
+                      {cls.namaKelas} {cls.namaKelas === moveClassStudent.kelas ? '(Kelas Sekarang)' : ''}
+                    </option>
+                  ))}
+                  <option value="Lulus / Alumni">Lulus / Alumni (Tamat Sekolah)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                <button
+                  type="button"
+                  onClick={() => setMoveClassStudent(null)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuickMoveClass}
+                  className="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl font-black shadow-md flex items-center gap-1.5"
+                >
+                  <ArrowUpRight className="w-4 h-4" /> Konfirmasi Pindah Kelas
                 </button>
               </div>
             </div>

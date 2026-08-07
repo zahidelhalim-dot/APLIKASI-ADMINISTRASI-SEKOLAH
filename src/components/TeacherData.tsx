@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Teacher, SchoolInfo, ClassCategory } from '../types';
+import { Teacher, SchoolInfo, ClassCategory, UserAccount } from '../types';
 import { Plus, Edit2, Trash2, Search, UserCheck, Check, X, Award, Clock, CalendarDays, CheckSquare, Download, Upload, FileSpreadsheet, AlertCircle, Eye, Phone, Mail, MapPin, GraduationCap, Calendar, Hash, User } from 'lucide-react';
 import { downloadTeacherTemplate, parseTeachersFile, exportTeachersToCSV } from '../utils/templateImporterExporter';
 
@@ -11,6 +11,7 @@ interface TeacherDataProps {
   onDeleteTeacher: (id: string) => void;
   onImportTeachers?: (newTeachers: Teacher[], replaceExisting?: boolean) => void;
   schoolInfo: SchoolInfo;
+  currentUser?: UserAccount | null;
 }
 
 const ALL_DAYS = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Sabtu', 'Ahad'];
@@ -23,7 +24,9 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
   onDeleteTeacher,
   onImportTeachers,
   schoolInfo,
+  currentUser,
 }) => {
+  const isAdmin = !currentUser || currentUser.role === 'admin';
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState<Teacher | null>(null);
@@ -58,6 +61,10 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
   });
 
   const handleOpenAdd = () => {
+    if (!isAdmin) {
+      alert('Akses Dibatasi: Hanya Administrator yang berhak menambah guru baru.');
+      return;
+    }
     setEditingTeacher(null);
     setFormData({
       nip: '19880101 201501 1 001',
@@ -82,6 +89,10 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
   };
 
   const handleOpenEdit = (teacher: Teacher) => {
+    if (!isAdmin) {
+      alert('Akses Dibatasi: Hanya Administrator yang berhak mengedit data guru.');
+      return;
+    }
     setEditingTeacher(teacher);
     setFormData({
       nip: teacher.nip,
@@ -218,27 +229,35 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
             <span>Download Template</span>
           </button>
 
-          <button
-            onClick={() => {
-              setImportedPreview([]);
-              setImportFileName('');
-              setImportError('');
-              setImportSuccessMsg('');
-              setIsImportModalOpen(true);
-            }}
-            className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow transition-all border border-amber-400"
-            title="Import data guru dari file CSV/JSON"
-          >
-            <Upload className="w-4 h-4 text-slate-950" />
-            <span>Import Template / CSV</span>
-          </button>
+          {isAdmin ? (
+            <>
+              <button
+                onClick={() => {
+                  setImportedPreview([]);
+                  setImportFileName('');
+                  setImportError('');
+                  setImportSuccessMsg('');
+                  setIsImportModalOpen(true);
+                }}
+                className="px-3 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow transition-all border border-amber-400"
+                title="Import data guru dari file CSV/JSON"
+              >
+                <Upload className="w-4 h-4 text-slate-950" />
+                <span>Import Template / CSV</span>
+              </button>
 
-          <button
-            onClick={handleOpenAdd}
-            className="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all border border-teal-400"
-          >
-            <Plus className="w-4 h-4" /> Tambah Guru
-          </button>
+              <button
+                onClick={handleOpenAdd}
+                className="px-3 py-2 bg-teal-600 hover:bg-teal-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow transition-all border border-teal-400"
+              >
+                <Plus className="w-4 h-4" /> Tambah Guru
+              </button>
+            </>
+          ) : (
+            <span className="bg-amber-400/20 text-amber-200 border border-amber-400/40 text-xs font-bold px-3 py-2 rounded-lg">
+              Mode Lihat Saja (Role: Guru / Wali)
+            </span>
+          )}
         </div>
       </div>
 
@@ -354,24 +373,28 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
-                          <button
-                            onClick={() => handleOpenEdit(t)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
-                            title="Edit Data & Jadwal Wajib"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (confirm(`Hapus data guru ${t.nama}?`)) {
-                                onDeleteTeacher(t.id);
-                              }
-                            }}
-                            className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
-                            title="Hapus"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => handleOpenEdit(t)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+                                title="Edit Data & Jadwal Wajib"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Hapus data guru ${t.nama}?`)) {
+                                    onDeleteTeacher(t.id);
+                                  }
+                                }}
+                                className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
+                                title="Hapus"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -950,6 +973,35 @@ export const TeacherData: React.FC<TeacherDataProps> = ({
                   </div>
                 </div>
               )}
+
+              {/* Column Structure Template Guide */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs space-y-1.5">
+                <span className="font-extrabold text-amber-950 flex items-center gap-1">
+                  <FileSpreadsheet className="w-4 h-4 text-amber-700" /> Format Kolom Excel / CSV Template Guru:
+                </span>
+                <p className="text-[11px] text-amber-900 leading-relaxed">
+                  Setiap elemen data guru menempati kolom terpisah di Excel/CSV:
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-[10px] font-mono font-bold text-slate-800 bg-white/80 p-2 rounded border border-amber-300/60">
+                  <div>1. NIP</div>
+                  <div>2. Nama Lengkap</div>
+                  <div>3. JK (L/P)</div>
+                  <div>4. Jabatan</div>
+                  <div>5. Status PTK</div>
+                  <div>6. NIK</div>
+                  <div>7. NUPTK</div>
+                  <div>8. Tempat Lahir</div>
+                  <div>9. Tanggal Lahir</div>
+                  <div>10. Alamat</div>
+                  <div>11. No HP</div>
+                  <div>12. Email</div>
+                  <div>13. Agama</div>
+                  <div>14. Pendidikan</div>
+                  <div>15. Hari Wajib</div>
+                  <div>16. Jam Wajib</div>
+                  <div>17. Keterangan</div>
+                </div>
+              </div>
 
               {/* Submit / Cancel Buttons */}
               <div className="flex items-center justify-end gap-2 pt-3 border-t">

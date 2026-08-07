@@ -123,19 +123,21 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">{classicTheme ? 'Klasik' : 'Modern'}</span>
           </button>
 
-          {/* Reset Demo Data Button */}
-          <button
-            onClick={() => {
-              if (confirm('Reset ulang data absensi dan profil ke data awal bawaan?')) {
-                onResetData();
-              }
-            }}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-900/80 hover:bg-emerald-950 text-emerald-100 border border-emerald-600 transition-all flex items-center gap-1"
-            title="Reset Data Bawaan"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Reset</span>
-          </button>
+          {/* Reset Demo Data Button (Admin Only) */}
+          {currentUser?.role === 'admin' && (
+            <button
+              onClick={() => {
+                if (confirm('Reset ulang data absensi dan profil ke data awal bawaan?')) {
+                  onResetData();
+                }
+              }}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-900/80 hover:bg-emerald-950 text-emerald-100 border border-emerald-600 transition-all flex items-center gap-1"
+              title="Reset Data Bawaan (Khusus Admin)"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Reset</span>
+            </button>
+          )}
         </div>
       </div>
     </header>
