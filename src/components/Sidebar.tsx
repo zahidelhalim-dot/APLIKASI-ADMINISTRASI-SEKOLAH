@@ -7,6 +7,7 @@ import {
   Briefcase,
   Users,
   UserCheck,
+  UserCog,
   Layers,
   FileSpreadsheet,
   PieChart,
@@ -78,7 +79,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       activeView === 'data_siswa' ||
       activeView === 'data_guru' ||
       activeView === 'kategori_kelas' ||
-      activeView === 'migrasi_kelas'
+      activeView === 'migrasi_kelas' ||
+      activeView === 'kelola_pengguna'
     ) {
       setOpenGroups((prev) => ({ ...prev, datamaster: true }));
     } else if (
@@ -398,6 +400,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   >
                     Naik Kelas
+                  </span>
+                </button>
+
+                {/* Sub Menu: Kelola Akun Pengguna */}
+                <button
+                  onClick={() => handleNavClick('kelola_pengguna')}
+                  className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-bold text-xs transition-all ${
+                    activeView === 'kelola_pengguna'
+                      ? 'bg-amber-500 text-slate-950 shadow-md font-black scale-[1.02]'
+                      : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <UserCog
+                      className={`w-4 h-4 shrink-0 ${
+                        activeView === 'kelola_pengguna' ? 'text-slate-950' : 'text-indigo-400'
+                      }`}
+                    />
+                    <span>Kelola Akun Pengguna</span>
+                  </div>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded-md font-extrabold uppercase ${
+                      activeView === 'kelola_pengguna'
+                        ? 'bg-slate-950 text-amber-300'
+                        : 'bg-indigo-950/80 text-indigo-300 border border-indigo-800/60'
+                    }`}
+                  >
+                    Akses/User
                   </span>
                 </button>
               </div>

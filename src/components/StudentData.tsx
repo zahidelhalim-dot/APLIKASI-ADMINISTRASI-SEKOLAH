@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Student, SchoolInfo, ClassCategory, Teacher, UserAccount } from '../types';
 import { ClassFilterBar } from './ClassFilterBar';
-import { Plus, Edit2, Trash2, Search, Users, Check, X, Download, Upload, FileSpreadsheet, FileText, AlertCircle, Eye, Phone, MapPin, User, Calendar, Hash, ArrowUpRight, GraduationCap } from 'lucide-react';
+import { Plus, Edit2, Trash2, Search, Users, Check, X, Download, Upload, FileSpreadsheet, FileText, AlertCircle, Eye, Phone, MapPin, User, Calendar, Hash, ArrowUpRight, GraduationCap, CheckSquare, Square, Layers, Zap, ArrowRight } from 'lucide-react';
 import { downloadStudentTemplate, parseStudentsFile, exportStudentsToCSV } from '../utils/templateImporterExporter';
 
 interface StudentDataProps {
@@ -40,6 +40,54 @@ export const StudentData: React.FC<StudentDataProps> = ({
   // Quick Move Class Modal State
   const [moveClassStudent, setMoveClassStudent] = useState<Student | null>(null);
   const [targetMoveClass, setTargetMoveClass] = useState<string>(classes[0]?.namaKelas || 'Kelas I');
+
+  // Bulk Selection & General Action State
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBulkMoveModalOpen, setIsBulkMoveModalOpen] = useState<boolean>(false);
+  const [bulkTargetClass, setBulkTargetClass] = useState<string>(classes[1]?.namaKelas || classes[0]?.namaKelas || 'Kelas II');
+
+  // Toggle single student selection
+  const toggleSelectStudent = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  // Toggle select all filtered students
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredStudents.length && filteredStudents.length > 0) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredStudents.map((s) => s.id));
+    }
+  };
+
+  // Execute bulk move/migration
+  const handleExecuteBulkMove = () => {
+    if (selectedIds.length === 0) return;
+    selectedIds.forEach((id) => {
+      const student = students.find((s) => s.id === id);
+      if (student) {
+        onUpdateStudent({ ...student, kelas: bulkTargetClass });
+      }
+    });
+    alert(`Berhasil memindahkan ${selectedIds.length} siswa ke ${bulkTargetClass}!`);
+    setSelectedIds([]);
+    setIsBulkMoveModalOpen(false);
+  };
+
+  // Execute bulk deletion (admin only)
+  const handleExecuteBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    if (!isAdmin) {
+      alert('Hanya Administrator yang berhak menghapus data siswa.');
+      return;
+    }
+    if (confirm(`Apakah Anda yakin ingin menghapus ${selectedIds.length} data siswa terpilih?`)) {
+      selectedIds.forEach((id) => onDeleteStudent(id));
+      setSelectedIds([]);
+    }
+  };
 
   // Import Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -266,7 +314,7 @@ export const StudentData: React.FC<StudentDataProps> = ({
           />
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-bold text-slate-600">
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
           <span>
             Terfilter: <span className="text-blue-800 font-extrabold">{filteredStudents.length} Siswa</span> (
             L: {filteredStudents.filter((s) => s.jenisKelamin === 'L').length} | P:{' '}
@@ -275,11 +323,78 @@ export const StudentData: React.FC<StudentDataProps> = ({
 
           <button
             onClick={() => exportStudentsToCSV(filteredStudents, `Data_Siswa_${selectedKelas.replace(/\s+/g, '_')}.csv`)}
-            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 text-[11px] font-bold flex items-center gap-1"
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
             title="Ekspor daftar siswa saat ini ke file CSV"
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" /> Ekspor CSV
           </button>
+        </div>
+      </div>
+
+      {/* General / Bulk Action Bar (When 1+ Selected OR for general quick migration) */}
+      <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-3.5 rounded-xl shadow-md border border-purple-700/60 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={toggleSelectAll}
+            className="px-3 py-1.5 bg-purple-800 hover:bg-purple-700 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 border border-purple-600 cursor-pointer"
+          >
+            {selectedIds.length === filteredStudents.length && filteredStudents.length > 0 ? (
+              <>
+                <CheckSquare className="w-4 h-4 text-amber-300" /> Batal Pilih Semua ({filteredStudents.length})
+              </>
+            ) : (
+              <>
+                <Square className="w-4 h-4 text-purple-300" /> Pilih Semua ({filteredStudents.length} Siswa)
+              </>
+            )}
+          </button>
+
+          <span className="text-xs font-mono font-extrabold text-amber-300">
+            Terpilih: {selectedIds.length} Siswa
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {selectedIds.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsBulkMoveModalOpen(true)}
+                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-black rounded-lg text-xs flex items-center gap-1.5 shadow border border-amber-200 cursor-pointer animate-pulse"
+              >
+                <Zap className="w-4 h-4 text-slate-950" />
+                <span>AKSI GENERAL: Pindah / Migrasikan {selectedIds.length} Siswa Terpilih</span>
+              </button>
+
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleExecuteBulkDelete}
+                  className="px-3 py-1.5 bg-rose-700 hover:bg-rose-800 text-white font-bold rounded-lg text-xs flex items-center gap-1 shadow border border-rose-600 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" /> Hapus Massal ({selectedIds.length})
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedIds(filteredStudents.map((s) => s.id));
+                setIsBulkMoveModalOpen(true);
+              }}
+              disabled={filteredStudents.length === 0}
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 shadow border transition-all ${
+                filteredStudents.length > 0
+                  ? 'bg-purple-800 hover:bg-purple-700 text-amber-300 border-purple-500 cursor-pointer'
+                  : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
+              }`}
+            >
+              <Zap className="w-4 h-4 text-amber-300" />
+              <span>Pindah / Migrasikan SEMUA Siswa Terfilter ({filteredStudents.length})</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -289,6 +404,15 @@ export const StudentData: React.FC<StudentDataProps> = ({
           <table className="w-full text-xs text-left">
             <thead className="bg-slate-800 text-white uppercase font-bold text-[11px] tracking-wider">
               <tr>
+                <th className="py-3 px-3 text-center w-10">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.length === filteredStudents.length && filteredStudents.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    title="Pilih / Batal Pilih Semua"
+                  />
+                </th>
                 <th className="py-3 px-3 text-center w-10">No</th>
                 <th className="py-3 px-3 w-28">NIS / NISN</th>
                 <th className="py-3 px-3">Nama Lengkap Siswa</th>
@@ -301,86 +425,102 @@ export const StudentData: React.FC<StudentDataProps> = ({
             <tbody className="divide-y divide-slate-200 font-medium">
               {filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-6 text-slate-500">
+                  <td colSpan={8} className="text-center py-6 text-slate-500">
                     Belum ada data siswa untuk kelas ini.
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((s, index) => (
-                  <tr key={s.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="py-2.5 px-3 text-center font-bold text-slate-600">{index + 1}</td>
-                    <td className="py-2.5 px-3 font-mono">
-                      <div className="text-blue-900 font-bold">{s.nis}</div>
-                      <div className="text-[10px] text-slate-500">{s.nisn}</div>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-bold text-slate-900">{s.nama}</div>
-                      {(s.tempatLahir || s.tanggalLahir) && (
-                        <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                          <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{s.tempatLahir ? `${s.tempatLahir}, ` : ''}{s.tanggalLahir || '-'}</span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center font-semibold">{s.jenisKelamin}</td>
-                    <td className="py-2.5 px-3 text-center">
-                      <span className="bg-emerald-100 text-emerald-950 font-black px-2.5 py-1 rounded border border-emerald-300 text-[11px]">
-                        {s.kelas}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3">
-                      <div className="font-bold text-slate-800">{s.namaOrangTua || '-'}</div>
-                      {s.noHpOrtu && (
-                        <div className="text-[10px] text-emerald-700 font-mono font-bold flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-emerald-600 shrink-0" /> {s.noHpOrtu}
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-2.5 px-3 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => setViewingDetailStudent(s)}
-                          className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-200"
-                          title="Lihat Detail Lengkap Siswa"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </button>
-                        {isAdmin && (
-                          <>
-                            <button
-                              onClick={() => {
-                                setMoveClassStudent(s);
-                                setTargetMoveClass(classes.find((c) => c.namaKelas !== s.kelas)?.namaKelas || classes[0]?.namaKelas || 'Kelas I');
-                              }}
-                              className="p-1.5 text-purple-700 hover:bg-purple-50 rounded border border-purple-200"
-                              title="Pindah / Migrasi Ke Kelas Lain"
-                            >
-                              <ArrowUpRight className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenEdit(s)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Hapus data siswa ${s.nama}?`)) {
-                                  onDeleteStudent(s.id);
-                                }
-                              }}
-                              className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
-                              title="Hapus"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </>
+                filteredStudents.map((s, index) => {
+                  const isSelected = selectedIds.includes(s.id);
+                  return (
+                    <tr
+                      key={s.id}
+                      className={`transition-colors ${
+                        isSelected ? 'bg-purple-50/90 hover:bg-purple-100/90' : 'hover:bg-slate-50'
+                      }`}
+                    >
+                      <td className="py-2.5 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectStudent(s.id)}
+                          className="w-4 h-4 rounded text-purple-700 focus:ring-purple-500 cursor-pointer"
+                        />
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-bold text-slate-600">{index + 1}</td>
+                      <td className="py-2.5 px-3 font-mono">
+                        <div className="text-blue-900 font-bold">{s.nis}</div>
+                        <div className="text-[10px] text-slate-500">{s.nisn}</div>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-bold text-slate-900">{s.nama}</div>
+                        {(s.tempatLahir || s.tanggalLahir) && (
+                          <div className="text-[10px] text-slate-500 flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                            <span>{s.tempatLahir ? `${s.tempatLahir}, ` : ''}{s.tanggalLahir || '-'}</span>
+                          </div>
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="py-2.5 px-3 text-center font-semibold">{s.jenisKelamin}</td>
+                      <td className="py-2.5 px-3 text-center">
+                        <span className="bg-emerald-100 text-emerald-950 font-black px-2.5 py-1 rounded border border-emerald-300 text-[11px]">
+                          {s.kelas}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-bold text-slate-800">{s.namaOrangTua || '-'}</div>
+                        {s.noHpOrtu && (
+                          <div className="text-[10px] text-emerald-700 font-mono font-bold flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-emerald-600 shrink-0" /> {s.noHpOrtu}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => setViewingDetailStudent(s)}
+                            className="p-1.5 text-emerald-700 hover:bg-emerald-50 rounded border border-emerald-200"
+                            title="Lihat Detail Lengkap Siswa"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setMoveClassStudent(s);
+                                  setTargetMoveClass(classes.find((c) => c.namaKelas !== s.kelas)?.namaKelas || classes[0]?.namaKelas || 'Kelas I');
+                                }}
+                                className="p-1.5 text-purple-700 hover:bg-purple-50 rounded border border-purple-200"
+                                title="Pindah / Migrasi Ke Kelas Lain"
+                              >
+                                <ArrowUpRight className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenEdit(s)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded border border-blue-200"
+                                title="Edit"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (confirm(`Hapus data siswa ${s.nama}?`)) {
+                                    onDeleteStudent(s.id);
+                                  }
+                                }}
+                                className="p-1.5 text-rose-600 hover:bg-rose-50 rounded border border-rose-200"
+                                title="Hapus"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -904,6 +1044,89 @@ export const StudentData: React.FC<StudentDataProps> = ({
                   className="px-5 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded-xl font-black shadow-md flex items-center gap-1.5"
                 >
                   <ArrowUpRight className="w-4 h-4" /> Konfirmasi Pindah Kelas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk / General Move Modal */}
+      {isBulkMoveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-amber-400 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white p-4 flex items-center justify-between">
+              <h3 className="font-black text-sm flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-300" /> AKSI GENERAL: PINDAH / MIGRASI MASSAL SISWA
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsBulkMoveModalOpen(false)}
+                className="text-white/80 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="bg-amber-50 border border-amber-300 p-3.5 rounded-xl space-y-1.5 text-slate-800">
+                <p className="font-extrabold text-amber-950 text-sm flex items-center gap-1.5">
+                  <GraduationCap className="w-5 h-5 text-amber-700 shrink-0" /> Konfirmasi Pindah Kelas Massal
+                </p>
+                <p className="text-slate-700 leading-relaxed">
+                  Tindakan ini akan memindahkan <strong className="text-purple-950 font-black text-sm">{selectedIds.length} siswa terpilih</strong> ke kelas tujuan baru sekaligus.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-extrabold text-slate-800 mb-1.5 text-xs">
+                  PILIH KELAS TUJUAN MASUKAN SISWA:
+                </label>
+                <select
+                  value={bulkTargetClass}
+                  onChange={(e) => setBulkTargetClass(e.target.value)}
+                  className="w-full p-3 border-2 border-purple-500 rounded-xl font-black text-sm text-slate-900 bg-purple-50/50 focus:ring-2 focus:ring-purple-600"
+                >
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.namaKelas}>
+                      {cls.namaKelas}
+                    </option>
+                  ))}
+                  <option value="Lulus / Alumni">Lulus / Alumni (Tamat / Alumni Sekolah)</option>
+                </select>
+              </div>
+
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 max-h-36 overflow-y-auto space-y-1">
+                <span className="font-extrabold text-slate-500 text-[10px] uppercase block">
+                  Daftar Siswa Yang Akan Dipindahkan ({selectedIds.length}):
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {selectedIds.map((id) => {
+                    const st = students.find((s) => s.id === id);
+                    if (!st) return null;
+                    return (
+                      <span key={id} className="bg-white px-2 py-0.5 rounded border text-[10px] font-bold text-slate-800">
+                        {st.nama} ({st.kelas})
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsBulkMoveModalOpen(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteBulkMove}
+                  className="px-5 py-2.5 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg border border-amber-300 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Zap className="w-4 h-4 text-slate-950" /> Pindahkan {selectedIds.length} Siswa Sekarang
                 </button>
               </div>
             </div>

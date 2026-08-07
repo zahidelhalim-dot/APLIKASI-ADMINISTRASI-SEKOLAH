@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SchoolInfo, UserAccount } from '../types';
 import { INITIAL_USERS } from '../data/initialData';
+import { getSignatoryDetails, getTempatDanTanggalTtd } from '../utils/signatureHelper';
 import {
   Edit3,
   Check,
@@ -222,6 +223,12 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1">
+                <span className="font-bold text-slate-700">BERLAKU KARTU</span>
+                <span className="col-span-2 font-semibold text-slate-900 truncate">
+                  : Siswa ({schoolInfo.masaBerlakuSiswa || 'selama menjadi siswa/i'}) | Guru ({schoolInfo.masaBerlakuGuru || 'selama menjadi PTK'})
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1">
                 <span className="font-bold text-slate-700">SEMESTER / THN</span>
                 <span className="col-span-2 font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                   : {schoolInfo.semester} (
@@ -251,31 +258,34 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
           {/* Column 2: Signatures & User Rules */}
           <div className="space-y-1.5">
             <div className="bg-emerald-100/90 p-2 rounded border border-emerald-300/80 space-y-1">
-              <span className="text-[10px] font-extrabold text-emerald-950 uppercase block border-b border-emerald-300 pb-0.5">
-                PENANDATANGAN & PEJABAT
+              <span className="text-[10px] font-extrabold text-emerald-950 uppercase block border-b border-emerald-300 pb-0.5 flex items-center justify-between">
+                <span>PENANDATANGAN & DOKUMEN</span>
+                <span className="text-[9px] font-mono text-emerald-800 bg-emerald-200/80 px-1.5 py-0.5 rounded">
+                  {schoolInfo.opsiWaktuTtd === 'custom' || schoolInfo.opsiTempatTtd === 'custom' ? 'KUSTOM' : 'REALTIME'}
+                </span>
               </span>
               <div className="grid grid-cols-3 gap-1">
-                <span className="font-bold text-emerald-900">KEPALA SEKOLAH</span>
+                <span className="font-bold text-emerald-900 uppercase">{getSignatoryDetails(schoolInfo).jabatan}</span>
                 <span className="col-span-2 font-black text-emerald-950 uppercase">
-                  : {schoolInfo.namaKepalaSekolah}
+                  : {getSignatoryDetails(schoolInfo).nama}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1">
-                <span className="font-bold text-emerald-900">NIP KEPALA</span>
+                <span className="font-bold text-emerald-900">NIP PENANDATANGAN</span>
                 <span className="col-span-2 font-mono font-bold text-slate-900">
-                  : {schoolInfo.nipKepalaSekolah}
+                  : {getSignatoryDetails(schoolInfo).nip}
                 </span>
               </div>
               <div className="grid grid-cols-3 gap-1">
-                <span className="font-bold text-slate-700">GURU KELAS</span>
+                <span className="font-bold text-slate-700">WAKTU & TEMPAT TTD</span>
+                <span className="col-span-2 font-bold text-amber-900 uppercase">
+                  : {getTempatDanTanggalTtd(schoolInfo)}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-1 pt-0.5 border-t border-emerald-200/60">
+                <span className="font-bold text-slate-700">GURU / WALI KELAS</span>
                 <span className="col-span-2 font-bold text-slate-900 uppercase">
-                  : {schoolInfo.namaGuruKelas}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                <span className="font-bold text-slate-700">NIP GURU</span>
-                <span className="col-span-2 font-mono font-bold text-slate-900">
-                  : {schoolInfo.nipGuruKelas}
+                  : {schoolInfo.namaGuruKelas} ({schoolInfo.nipGuruKelas || '-'})
                 </span>
               </div>
             </div>
@@ -418,6 +428,28 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                     </div>
 
                     <div>
+                      <label className="block font-bold text-slate-700 mb-1">Masa Berlaku Kartu Siswa</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: selama menjadi siswa/i"
+                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
+                        value={formData.masaBerlakuSiswa || ''}
+                        onChange={(e) => setFormData({ ...formData, masaBerlakuSiswa: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">Masa Berlaku Kartu Guru/PTK</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: selama menjadi PTK"
+                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-medium"
+                        value={formData.masaBerlakuGuru || ''}
+                        onChange={(e) => setFormData({ ...formData, masaBerlakuGuru: e.target.value })}
+                      />
+                    </div>
+
+                    <div>
                       <label className="block font-bold text-slate-700 mb-1">Kelurahan / Desa</label>
                       <input
                         type="text"
@@ -515,13 +547,45 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                     </div>
                   </div>
 
-                  <div className="border-t pt-3 font-extrabold text-emerald-900 uppercase text-xs">
-                    Pejabat Penandatangan Laporan (Kepala Sekolah & Wali)
+                  <div className="border-t pt-3 font-extrabold text-emerald-900 uppercase text-xs flex items-center justify-between">
+                    <span>Pengaturan Penanda Tangan, Waktu & Tempat TTD</span>
+                    <span className="text-[10px] text-amber-800 bg-amber-100 font-bold px-2 py-0.5 rounded border border-amber-300">
+                      Berlaku untuk Laporan, Cetak Kartu & Ekspor
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="sm:col-span-2">
+                      <label className="block font-bold text-slate-800 mb-1">
+                        Jabatan Penandatangan Utama
+                      </label>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {['Kepala Sekolah', 'Plt. Kepala Sekolah', 'Plh. Kepala Sekolah', 'Wali Kelas', 'Ketua Panitia'].map((j) => (
+                          <button
+                            key={j}
+                            type="button"
+                            onClick={() => setFormData({ ...formData, jabatanPenandatangan: j })}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                              (formData.jabatanPenandatangan || 'Kepala Sekolah') === j
+                                ? 'bg-emerald-800 text-white border-emerald-900 shadow-sm'
+                                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100'
+                            }`}
+                          >
+                            {j}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Atau ketik jabatan kustom..."
+                        className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold text-slate-900"
+                        value={formData.jabatanPenandatangan || 'Kepala Sekolah'}
+                        onChange={(e) => setFormData({ ...formData, jabatanPenandatangan: e.target.value })}
+                      />
+                    </div>
+
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">Nama Kepala Sekolah</label>
+                      <label className="block font-bold text-slate-700 mb-1">Nama Pejabat / Kepala Sekolah</label>
                       <input
                         type="text"
                         className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-bold"
@@ -532,13 +596,89 @@ export const SchoolInfoCard: React.FC<SchoolInfoCardProps> = ({
                     </div>
 
                     <div>
-                      <label className="block font-bold text-slate-700 mb-1">NIP Kepala Sekolah</label>
+                      <label className="block font-bold text-slate-700 mb-1">NIP Pejabat / Kepala Sekolah</label>
                       <input
                         type="text"
                         className="w-full p-2 border rounded-lg border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono"
                         value={formData.nipKepalaSekolah}
                         onChange={(e) => setFormData({ ...formData, nipKepalaSekolah: e.target.value })}
                       />
+                    </div>
+
+                    {/* Opsi Tempat TTD */}
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                      <label className="block font-bold text-slate-800 mb-1 text-xs">
+                        OPSI TEMPAT TTD:
+                      </label>
+                      <div className="flex items-center gap-3 mb-1.5 text-xs font-bold">
+                        <label className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="opsiTempatTtd"
+                            checked={(formData.opsiTempatTtd || 'realtime') === 'realtime'}
+                            onChange={() => setFormData({ ...formData, opsiTempatTtd: 'realtime' })}
+                            className="text-emerald-700 focus:ring-emerald-500"
+                          />
+                          <span className="text-emerald-950">Realtime (Kota Sekolah)</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="opsiTempatTtd"
+                            checked={formData.opsiTempatTtd === 'custom'}
+                            onChange={() => setFormData({ ...formData, opsiTempatTtd: 'custom' })}
+                            className="text-emerald-700 focus:ring-emerald-500"
+                          />
+                          <span className="text-purple-950">Sesuaikan (Kustom)</span>
+                        </label>
+                      </div>
+                      {formData.opsiTempatTtd === 'custom' && (
+                        <input
+                          type="text"
+                          placeholder="Masukkan nama tempat (misal: Pangkalan Bun)"
+                          className="w-full p-1.5 border rounded border-purple-300 bg-purple-50/50 font-bold text-xs"
+                          value={formData.tempatTtdCustom || ''}
+                          onChange={(e) => setFormData({ ...formData, tempatTtdCustom: e.target.value })}
+                        />
+                      )}
+                    </div>
+
+                    {/* Opsi Waktu TTD */}
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200">
+                      <label className="block font-bold text-slate-800 mb-1 text-xs">
+                        OPSI WAKTU / TANGGAL TTD:
+                      </label>
+                      <div className="flex items-center gap-3 mb-1.5 text-xs font-bold">
+                        <label className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="opsiWaktuTtd"
+                            checked={(formData.opsiWaktuTtd || 'realtime') === 'realtime'}
+                            onChange={() => setFormData({ ...formData, opsiWaktuTtd: 'realtime' })}
+                            className="text-emerald-700 focus:ring-emerald-500"
+                          />
+                          <span className="text-emerald-950">Realtime (Tgl Hari Ini)</span>
+                        </label>
+                        <label className="flex items-center gap-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="opsiWaktuTtd"
+                            checked={formData.opsiWaktuTtd === 'custom'}
+                            onChange={() => setFormData({ ...formData, opsiWaktuTtd: 'custom' })}
+                            className="text-emerald-700 focus:ring-emerald-500"
+                          />
+                          <span className="text-purple-950">Sesuaikan (Kustom)</span>
+                        </label>
+                      </div>
+                      {formData.opsiWaktuTtd === 'custom' && (
+                        <input
+                          type="text"
+                          placeholder="Masukkan tanggal (misal: 17 Agustus 2026)"
+                          className="w-full p-1.5 border rounded border-purple-300 bg-purple-50/50 font-bold text-xs"
+                          value={formData.tanggalTtdCustom || ''}
+                          onChange={(e) => setFormData({ ...formData, tanggalTtdCustom: e.target.value })}
+                        />
+                      )}
                     </div>
 
                     <div>

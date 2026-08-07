@@ -110,6 +110,30 @@ export const ClassMigrationView: React.FC<ClassMigrationViewProps> = ({
     setSelectedStudentIds([]);
   };
 
+  // Execute General / Bulk Migration for ALL students in source class
+  const handleMoveAllSourceStudents = () => {
+    if (sourceStudents.length === 0) {
+      alert(`Tidak ada siswa terdaftar di ${sourceClass}`);
+      return;
+    }
+    if (sourceClass === targetClass) {
+      alert('Kelas Asal dan Kelas Tujuan tidak boleh sama!');
+      return;
+    }
+    if (confirm(`Aksi General: Apakah Anda yakin ingin memindahkan SELURUH ${sourceStudents.length} siswa dari ${sourceClass} ke ${targetClass}?`)) {
+      const sourceIds = sourceStudents.map((s) => s.id);
+      const updated = students.map((s) => {
+        if (sourceIds.includes(s.id)) {
+          return { ...s, kelas: targetClass };
+        }
+        return s;
+      });
+      onMigrateStudents(updated);
+      triggerToast(`Berhasil memindahkan SELURUH (${sourceStudents.length}) siswa dari ${sourceClass} ke ${targetClass}!`);
+      setSelectedStudentIds([]);
+    }
+  };
+
   // Execute Bulk Automatic Sequential Promotion
   const handleExecuteMassalPromotion = () => {
     // Perform sequential promotion
@@ -350,21 +374,36 @@ export const ClassMigrationView: React.FC<ClassMigrationViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={toggleSelectAll}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 rounded-lg text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               >
                 {selectedStudentIds.length === filteredSourceStudents.length && filteredSourceStudents.length > 0 ? (
                   <>
-                    <CheckSquare className="w-4 h-4 text-purple-700" /> Batal Pilih Semua
+                    <CheckSquare className="w-4 h-4 text-purple-700" /> Batal Pilih
                   </>
                 ) : (
                   <>
-                    <Square className="w-4 h-4 text-slate-500" /> Pilih Semua Siswa
+                    <Square className="w-4 h-4 text-slate-500" /> Pilih Semua
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                disabled={sourceStudents.length === 0}
+                onClick={handleMoveAllSourceStudents}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-black flex items-center gap-1.5 shadow transition-all ${
+                  sourceStudents.length > 0
+                    ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 border border-amber-300 cursor-pointer'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+                title={`Pindahkan SEMUA ${sourceStudents.length} siswa di ${sourceClass} ke ${targetClass}`}
+              >
+                <Zap className="w-4 h-4 text-slate-950" />
+                <span>⚡ Aksi General: Pindah SEMUA Siswa ({sourceStudents.length})</span>
               </button>
 
               <button
@@ -378,7 +417,7 @@ export const ClassMigrationView: React.FC<ClassMigrationViewProps> = ({
                 }`}
               >
                 <ArrowUpRight className="w-4 h-4" />
-                <span>Migrasikan {selectedStudentIds.length} Siswa Terpilih ➔ {targetClass}</span>
+                <span>Migrasikan {selectedStudentIds.length} Terpilih ➔ {targetClass}</span>
               </button>
             </div>
           </div>

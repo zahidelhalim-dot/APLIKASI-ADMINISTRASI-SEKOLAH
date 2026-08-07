@@ -8,6 +8,8 @@ interface LoginFormProps {
   currentUser: UserAccount | null;
   onLogout: () => void;
   schoolName: string;
+  users?: UserAccount[];
+  userPasswords?: { [username: string]: string };
 }
 
 export const LoginForm: React.FC<LoginFormProps> = ({
@@ -15,6 +17,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   currentUser,
   onLogout,
   schoolName,
+  users = INITIAL_USERS,
+  userPasswords = DEFAULT_PASSWORDS,
 }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -26,14 +30,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({
     setErrorMessage('');
 
     const cleanUsername = username.trim().toLowerCase();
-    const user = INITIAL_USERS.find((u) => u.username.toLowerCase() === cleanUsername);
+    const user = users.find((u) => u.username.toLowerCase() === cleanUsername);
 
     if (!user) {
       setErrorMessage('Username tidak ditemukan! Silakan periksa kembali username Anda.');
       return;
     }
 
-    const correctPassword = DEFAULT_PASSWORDS[user.username] || '123456';
+    const correctPassword = userPasswords[user.username] || '123456';
     if (password !== correctPassword) {
       setErrorMessage('Kata sandi (Password) salah! Silakan coba lagi.');
       return;

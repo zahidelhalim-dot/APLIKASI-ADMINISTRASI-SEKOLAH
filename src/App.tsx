@@ -15,6 +15,7 @@ import {
   INITIAL_TEACHERS,
   INITIAL_CLASSES,
   INITIAL_USERS,
+  DEFAULT_PASSWORDS,
   MONTH_LIST,
   generateInitialAttendance,
 } from './data/initialData';
@@ -34,6 +35,7 @@ import { KalenderView } from './components/KalenderView';
 import { LaporanView } from './components/LaporanView';
 import { StudentCardView } from './components/StudentCardView';
 import { PrintableReportView } from './components/PrintableReportView';
+import { UserManagementView } from './components/UserManagementView';
 import { LoginForm } from './components/LoginForm';
 import { ChevronRight, Info, ShieldAlert, X } from 'lucide-react';
 
@@ -75,6 +77,16 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_CLASSES;
   });
 
+  const [users, setUsers] = useState<UserAccount[]>(() => {
+    const saved = localStorage.getItem('absensi_users');
+    return saved ? JSON.parse(saved) : INITIAL_USERS;
+  });
+
+  const [userPasswords, setUserPasswords] = useState<{ [username: string]: string }>(() => {
+    const saved = localStorage.getItem('absensi_passwords');
+    return saved ? JSON.parse(saved) : DEFAULT_PASSWORDS;
+  });
+
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>(() => {
     const saved = localStorage.getItem('absensi_attendance');
     return saved ? JSON.parse(saved) : generateInitialAttendance();
@@ -83,7 +95,10 @@ export default function App() {
   const [activeView, setActiveView] = useState<ViewMode>('dashboard');
   const [selectedMonth, setSelectedMonth] = useState<MonthOption | null>(MONTH_LIST[1]); // Default August
   const [selectedKelas, setSelectedKelas] = useState<string>('SEMUA');
-  const [classicTheme, setClassicTheme] = useState<boolean>(true);
+  const [classicTheme, setClassicTheme] = useState<boolean>(() => {
+    const saved = localStorage.getItem('absensi_classic_theme');
+    return saved !== null ? JSON.parse(saved) : true; // Default Klasik
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Sync auth state
@@ -118,6 +133,35 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('absensi_attendance', JSON.stringify(attendanceRecords));
   }, [attendanceRecords]);
+
+  useEffect(() => {
+    localStorage.setItem('absensi_users', JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem('absensi_passwords', JSON.stringify(userPasswords));
+  }, [userPasswords]);
+
+  useEffect(() => {
+    localStorage.setItem('absensi_classic_theme', JSON.stringify(classicTheme));
+  }, [classicTheme]);
+
+  // User Management Handlers
+  const handleAddUser = (newUser: UserAccount, pwd: string) => {
+    setUsers((prev) => [...prev, newUser]);
+    setUserPasswords((prev) => ({ ...prev, [newUser.username]: pwd }));
+  };
+
+  const handleUpdateUser = (updatedUser: UserAccount, pwd?: string) => {
+    setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+    if (pwd) {
+      setUserPasswords((prev) => ({ ...prev, [updatedUser.username]: pwd }));
+    }
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+  };
 
   // Login & Logout Handlers
   const handleLoginSuccess = (user: UserAccount) => {
@@ -335,6 +379,8 @@ export default function App() {
                 currentUser={currentUser}
                 onLogout={handleLogout}
                 schoolName={schoolInfo.namaSekolah}
+                users={users}
+                userPasswords={userPasswords}
               />
             </div>
           </div>
@@ -367,6 +413,18 @@ export default function App() {
               onAddClass={handleAddClass}
               onUpdateClass={handleUpdateClass}
               onDeleteClass={handleDeleteClass}
+              currentUser={currentUser}
+            />
+          )}
+
+          {activeView === 'kelola_pengguna' && (
+            <UserManagementView
+              users={users}
+              userPasswords={userPasswords}
+              onAddUser={handleAddUser}
+              onUpdateUser={handleUpdateUser}
+              onDeleteUser={handleDeleteUser}
+              classes={classes}
               currentUser={currentUser}
             />
           )}

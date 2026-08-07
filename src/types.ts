@@ -19,6 +19,15 @@ export interface SchoolInfo {
   logoUrl?: string;
   dashboardBannerUrl?: string;
   mottoSekolah?: string;
+  masaBerlakuSiswa?: string;
+  masaBerlakuGuru?: string;
+  jabatanPenandatangan?: string; // e.g. 'Kepala Sekolah', 'Plt. Kepala Sekolah', 'Wali Kelas', 'Ketua Panitia'
+  namaPenandatanganCustom?: string;
+  nipPenandatanganCustom?: string;
+  opsiWaktuTtd?: 'realtime' | 'custom';
+  tanggalTtdCustom?: string;
+  opsiTempatTtd?: 'realtime' | 'custom';
+  tempatTtdCustom?: string;
 }
 
 export interface ClassCategory {
@@ -96,6 +105,7 @@ export type ViewMode =
   | 'data_guru'
   | 'kategori_kelas'
   | 'migrasi_kelas'
+  | 'kelola_pengguna'
   | 'rekap'
   | 'grafik'
   | 'kalender'

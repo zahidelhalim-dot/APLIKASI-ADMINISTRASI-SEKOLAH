@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { toJpeg, toPng } from 'html-to-image';
 import { saveAs } from 'file-saver';
+import { getSignatoryDetails, getTempatDanTanggalTtd } from '../utils/signatureHelper';
 import {
   Student,
   Teacher,
@@ -72,7 +73,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
   const [activeTab, setActiveTab] = useState<'cetak' | 'scanner'>('cetak');
   const [cardTarget, setCardTarget] = useState<'siswa' | 'guru'>('siswa');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cardTheme, setCardTheme] = useState<'amber' | 'emerald' | 'blue' | 'purple'>('amber');
+  const [cardTheme, setCardTheme] = useState<'white' | 'amber' | 'emerald' | 'blue' | 'purple'>('emerald');
 
   // Single Card Print state
   const [singlePrintItem, setSinglePrintItem] = useState<{
@@ -82,6 +83,25 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
 
   // Custom JPG Export state
   const [jpgModalOpen, setJpgModalOpen] = useState(false);
+
+  // Motto Edit Modal state
+  const [isMottoModalOpen, setIsMottoModalOpen] = useState(false);
+  const [tempMottoSekolah, setTempMottoSekolah] = useState(schoolInfo.mottoSekolah || 'BERAKHLAK MULIA, CERDAS & BERPRESTASI');
+
+  // Card Validity Edit Modal state
+  const [isValidityModalOpen, setIsValidityModalOpen] = useState(false);
+  const [tempMasaBerlakuSiswa, setTempMasaBerlakuSiswa] = useState(schoolInfo.masaBerlakuSiswa || 'selama menjadi siswa/i');
+  const [tempMasaBerlakuGuru, setTempMasaBerlakuGuru] = useState(schoolInfo.masaBerlakuGuru || 'selama menjadi PTK');
+
+  // Signatory & Date/Place Options Modal state
+  const [isSignatoryModalOpen, setIsSignatoryModalOpen] = useState(false);
+  const [tempJabatan, setTempJabatan] = useState(schoolInfo.jabatanPenandatangan || 'Kepala Sekolah');
+  const [tempNamaPenandatangan, setTempNamaPenandatangan] = useState(schoolInfo.namaPenandatanganCustom || schoolInfo.namaKepalaSekolah || '');
+  const [tempNipPenandatangan, setTempNipPenandatangan] = useState(schoolInfo.nipPenandatanganCustom || schoolInfo.nipKepalaSekolah || '');
+  const [tempOpsiWaktu, setTempOpsiWaktu] = useState<'realtime' | 'custom'>(schoolInfo.opsiWaktuTtd || 'realtime');
+  const [tempTanggalCustom, setTempTanggalCustom] = useState(schoolInfo.tanggalTtdCustom || '');
+  const [tempOpsiTempat, setTempOpsiTempat] = useState<'realtime' | 'custom'>(schoolInfo.opsiTempatTtd || 'realtime');
+  const [tempTempatCustom, setTempTempatCustom] = useState(schoolInfo.tempatTtdCustom || '');
   const [selectedJpgItem, setSelectedJpgItem] = useState<{
     type: 'siswa' | 'guru';
     data: Student | Teacher;
@@ -898,6 +918,7 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                 <div className="flex gap-1.5">
                   {(
                     [
+                      { id: 'white', name: 'Putih Clean', bg: 'bg-white border-2 border-slate-400' },
                       { id: 'amber', name: 'Emas Klasik', bg: 'bg-amber-500' },
                       { id: 'emerald', name: 'Hijau Toska', bg: 'bg-emerald-600' },
                       { id: 'blue', name: 'Biru Edukasi', bg: 'bg-blue-600' },
@@ -916,6 +937,49 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
                     />
                   ))}
                 </div>
+
+                <button
+                  onClick={() => {
+                    setTempMasaBerlakuSiswa(schoolInfo.masaBerlakuSiswa || 'selama menjadi siswa/i');
+                    setTempMasaBerlakuGuru(schoolInfo.masaBerlakuGuru || 'selama menjadi PTK');
+                    setIsValidityModalOpen(true);
+                  }}
+                  className="ml-2 px-3 py-1 bg-amber-100 hover:bg-amber-200 text-amber-950 font-bold text-xs rounded-xl border border-amber-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                  title="Klik untuk merubah tulisan masa berlaku pada kartu siswa / guru"
+                >
+                  <Settings className="w-3.5 h-3.5 text-amber-800" />
+                  <span>Ubah Tulisan Berlaku Kartu</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setTempMottoSekolah(schoolInfo.mottoSekolah || 'BERAKHLAK MULIA, CERDAS & BERPRESTASI');
+                    setIsMottoModalOpen(true);
+                  }}
+                  className="px-3 py-1 bg-purple-100 hover:bg-purple-200 text-purple-950 font-bold text-xs rounded-xl border border-purple-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                  title="Klik untuk mengganti Motto Sekolah pada kartu"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-purple-800" />
+                  <span>🌟 Ganti Motto Sekolah</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setTempJabatan(schoolInfo.jabatanPenandatangan || 'Kepala Sekolah');
+                    setTempNamaPenandatangan(schoolInfo.namaPenandatanganCustom || schoolInfo.namaKepalaSekolah || '');
+                    setTempNipPenandatangan(schoolInfo.nipPenandatanganCustom || schoolInfo.nipKepalaSekolah || '');
+                    setTempOpsiWaktu(schoolInfo.opsiWaktuTtd || 'realtime');
+                    setTempTanggalCustom(schoolInfo.tanggalTtdCustom || '');
+                    setTempOpsiTempat(schoolInfo.opsiTempatTtd || 'realtime');
+                    setTempTempatCustom(schoolInfo.tempatTtdCustom || '');
+                    setIsSignatoryModalOpen(true);
+                  }}
+                  className="px-3 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-950 font-bold text-xs rounded-xl border border-emerald-300 flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                  title="Atur Opsi Penanda Tangan, Waktu (Realtime/Sesuaikan), dan Tempat TTD"
+                >
+                  <FileCheck2 className="w-3.5 h-3.5 text-emerald-800" />
+                  <span>✍️ Opsi Penanda Tangan & Waktu/Tempat</span>
+                </button>
               </div>
             </div>
 
@@ -1794,7 +1858,427 @@ export const StudentCardView: React.FC<StudentCardViewProps> = ({
         </div>
       )}
 
-      {/* HIDDEN RENDER CONTAINER FOR EXACT CUSTOM SIZE CANVAS RENDERING */}
+      {/* CARD VALIDITY EDIT MODAL */}
+      {isValidityModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-amber-400 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white p-4 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                <Settings className="w-5 h-5 text-amber-300" /> UBAH TULISAN MASA BERLAKU KARTU
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsValidityModalOpen(false)}
+                className="text-white/80 hover:text-white cursor-pointer font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-slate-700 space-y-1">
+                <p className="font-bold text-amber-950">Atur Keterangan "Berlaku:" Pada Kartu ID</p>
+                <p className="text-[11px] text-slate-600">
+                  Tulisan ini akan dicetak secara otomatis pada seluruh Kartu ID Siswa dan Kartu ID Guru/PTK.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-extrabold text-slate-800 mb-1">
+                  Tulisan Masa Berlaku Kartu Siswa:
+                </label>
+                <input
+                  type="text"
+                  value={tempMasaBerlakuSiswa}
+                  onChange={(e) => setTempMasaBerlakuSiswa(e.target.value)}
+                  placeholder="Contoh: selama menjadi siswa/i"
+                  className="w-full p-2.5 border-2 border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-amber-500"
+                />
+                <span className="text-[10px] text-slate-500 font-medium mt-0.5 block">
+                  Standar: "selama menjadi siswa/i" atau "s.d Tahun 2027"
+                </span>
+              </div>
+
+              <div>
+                <label className="block font-extrabold text-slate-800 mb-1">
+                  Tulisan Masa Berlaku Kartu Guru & PTK:
+                </label>
+                <input
+                  type="text"
+                  value={tempMasaBerlakuGuru}
+                  onChange={(e) => setTempMasaBerlakuGuru(e.target.value)}
+                  placeholder="Contoh: selama menjadi PTK"
+                  className="w-full p-2.5 border-2 border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-amber-500"
+                />
+                <span className="text-[10px] text-slate-500 font-medium mt-0.5 block">
+                  Standar: "selama menjadi PTK"
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsValidityModalOpen(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdateSchoolInfo({
+                      ...schoolInfo,
+                      masaBerlakuSiswa: tempMasaBerlakuSiswa,
+                      masaBerlakuGuru: tempMasaBerlakuGuru,
+                    });
+                    setIsValidityModalOpen(false);
+                  }}
+                  className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow border border-amber-300 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" /> Simpan Perubahan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MOTTO SEKOLAH EDIT MODAL */}
+      {isMottoModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-purple-500 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-purple-800 via-indigo-900 to-slate-900 text-white p-4 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-300" /> GANTI MOTTO SEKOLAH
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsMottoModalOpen(false)}
+                className="text-white/80 hover:text-white cursor-pointer font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs">
+              <div className="bg-purple-50 border border-purple-200 p-3 rounded-xl text-slate-700 space-y-1">
+                <p className="font-bold text-purple-950">
+                  Motto Sekolah akan dicetak pada bagian bawah (footer) seluruh Kartu Anggota.
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  Ketik motto sekolah baru Anda di bawah ini, lalu klik Simpan Motto.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  Motto / Slogan Sekolah Baru:
+                </label>
+                <input
+                  type="text"
+                  value={tempMottoSekolah}
+                  onChange={(e) => setTempMottoSekolah(e.target.value)}
+                  placeholder="Contoh: BERAKHLAK MULIA, CERDAS & BERPRESTASI"
+                  className="w-full p-2.5 border-2 border-purple-300 rounded-xl font-black uppercase text-purple-950 focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              {/* Quick Motto Presets */}
+              <div>
+                <span className="block font-extrabold text-slate-600 text-[10px] uppercase mb-1.5">Rekomendasi Motto Populer:</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    'BERAKHLAK MULIA, CERDAS & BERPRESTASI',
+                    'DISIPLIN, JUJUR & MANDIRI',
+                    'UNGGUL DALAM PRESTASI, ANGGUN DALAM BEKTI',
+                    'CERDAS, KREATIF, BERKARAKTER',
+                    'BERIMAN, BERILMU & BERAMAL'
+                  ].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setTempMottoSekolah(preset)}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-900 border border-slate-300 hover:border-purple-300 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer"
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsMottoModalOpen(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdateSchoolInfo({
+                      ...schoolInfo,
+                      mottoSekolah: tempMottoSekolah,
+                    });
+                    setIsMottoModalOpen(false);
+                  }}
+                  className="px-5 py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-black text-xs rounded-xl shadow border border-purple-500 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" /> Simpan Motto
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SIGNATORY & TIME/PLACE OPTIONS MODAL */}
+      {isSignatoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden border-2 border-emerald-500 animate-in fade-in zoom-in-95 duration-200">
+            <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-slate-900 text-white p-4 flex items-center justify-between">
+              <h3 className="font-extrabold text-sm flex items-center gap-2">
+                <FileCheck2 className="w-5 h-5 text-emerald-300" /> OPSI PENANDA TANGAN, WAKTU & TEMPAT TTD
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsSignatoryModalOpen(false)}
+                className="text-white/80 hover:text-white cursor-pointer font-bold"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4 text-xs max-h-[80vh] overflow-y-auto">
+              <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-slate-700 space-y-1">
+                <p className="font-bold text-emerald-950 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-emerald-600" /> Kustomisasi Penanda Tangan & Tanggal/Tempat
+                </p>
+                <p className="text-[11px] text-slate-600">
+                  Pengaturan ini secara otomatis berlaku untuk seluruh cetakan Kartu ID, Laporan Absensi, PDF, dan Ekspor Word.
+                </p>
+              </div>
+
+              {/* SECTION 1: JABATAN & NAMA PENANDA TANGAN */}
+              <div className="space-y-2 border-b pb-3">
+                <label className="block font-extrabold text-slate-900 uppercase text-xs">
+                  1. JABATAN PENANDATANGAN UTAMA
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {['Kepala Sekolah', 'Plt. Kepala Sekolah', 'Plh. Kepala Sekolah', 'Wali Kelas', 'Ketua Panitia'].map((j) => (
+                    <button
+                      key={j}
+                      type="button"
+                      onClick={() => setTempJabatan(j)}
+                      className={`px-3 py-1 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
+                        tempJabatan === j
+                          ? 'bg-emerald-700 text-white border-emerald-900 shadow-xs'
+                          : 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200'
+                      }`}
+                    >
+                      {j}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={tempJabatan}
+                  onChange={(e) => setTempJabatan(e.target.value)}
+                  placeholder="Ketik nama jabatan kustom..."
+                  className="w-full p-2.5 border-2 border-slate-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Nama Penandatangan:</label>
+                    <input
+                      type="text"
+                      value={tempNamaPenandatangan}
+                      onChange={(e) => setTempNamaPenandatangan(e.target.value)}
+                      placeholder="Contoh: MUHAMMAD SURIADIE, S.Pd"
+                      className="w-full p-2 border border-slate-300 rounded-lg font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">NIP Penandatangan:</label>
+                    <input
+                      type="text"
+                      value={tempNipPenandatangan}
+                      onChange={(e) => setTempNipPenandatangan(e.target.value)}
+                      placeholder="Contoh: 19780512 200312 1 002"
+                      className="w-full p-2 border border-slate-300 rounded-lg font-mono text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: OPSI TEMPAT TTD */}
+              <div className="space-y-2 border-b pb-3">
+                <label className="block font-extrabold text-slate-900 uppercase text-xs">
+                  2. OPSI TEMPAT TTD (LOKASI DOKUMEN)
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label
+                    onClick={() => setTempOpsiTempat('realtime')}
+                    className={`p-3 rounded-xl border-2 flex items-start gap-2.5 cursor-pointer transition-all ${
+                      tempOpsiTempat === 'realtime'
+                        ? 'bg-emerald-50 border-emerald-600 text-emerald-950 font-bold shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tempOpsiTempat"
+                      checked={tempOpsiTempat === 'realtime'}
+                      onChange={() => setTempOpsiTempat('realtime')}
+                      className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="font-extrabold block text-xs">🟢 Realtime (Otomatis Kota Sekolah)</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-normal">
+                        Hasil: "{schoolInfo.kabupatenKota || schoolInfo.kelurahan || 'Sekolah'}"
+                      </span>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setTempOpsiTempat('custom')}
+                    className={`p-3 rounded-xl border-2 flex items-start gap-2.5 cursor-pointer transition-all ${
+                      tempOpsiTempat === 'custom'
+                        ? 'bg-purple-50 border-purple-600 text-purple-950 font-bold shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tempOpsiTempat"
+                      checked={tempOpsiTempat === 'custom'}
+                      onChange={() => setTempOpsiTempat('custom')}
+                      className="mt-0.5 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div>
+                      <span className="font-extrabold block text-xs">🔵 Sesuaikan (Tempat Kustom)</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-normal">
+                        Menentukan nama tempat secara bebas.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                {tempOpsiTempat === 'custom' && (
+                  <div className="pt-1">
+                    <label className="block font-bold text-slate-700 mb-1">Nama Tempat TTD Manual:</label>
+                    <input
+                      type="text"
+                      value={tempTempatCustom}
+                      onChange={(e) => setTempTempatCustom(e.target.value)}
+                      placeholder="Contoh: Balangan, Banjarmasin, Jakarta"
+                      className="w-full p-2.5 border-2 border-purple-300 bg-purple-50/50 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 3: OPSI WAKTU TTD */}
+              <div className="space-y-2">
+                <label className="block font-extrabold text-slate-900 uppercase text-xs">
+                  3. OPSI WAKTU / TANGGAL TTD
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label
+                    onClick={() => setTempOpsiWaktu('realtime')}
+                    className={`p-3 rounded-xl border-2 flex items-start gap-2.5 cursor-pointer transition-all ${
+                      tempOpsiWaktu === 'realtime'
+                        ? 'bg-emerald-50 border-emerald-600 text-emerald-950 font-bold shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tempOpsiWaktu"
+                      checked={tempOpsiWaktu === 'realtime'}
+                      onChange={() => setTempOpsiWaktu('realtime')}
+                      className="mt-0.5 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="font-extrabold block text-xs">🟢 Realtime (Tanggal Hari Ini)</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-normal">
+                        Otomatis tanggal saat dokumen dibuat/dicetak.
+                      </span>
+                    </div>
+                  </label>
+
+                  <label
+                    onClick={() => setTempOpsiWaktu('custom')}
+                    className={`p-3 rounded-xl border-2 flex items-start gap-2.5 cursor-pointer transition-all ${
+                      tempOpsiWaktu === 'custom'
+                        ? 'bg-purple-50 border-purple-600 text-purple-950 font-bold shadow-xs'
+                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="tempOpsiWaktu"
+                      checked={tempOpsiWaktu === 'custom'}
+                      onChange={() => setTempOpsiWaktu('custom')}
+                      className="mt-0.5 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div>
+                      <span className="font-extrabold block text-xs">🔵 Sesuaikan (Tanggal Kustom)</span>
+                      <span className="text-[10px] text-slate-500 block mt-0.5 font-normal">
+                        Menentukan tanggal atau tahun kustom.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+
+                {tempOpsiWaktu === 'custom' && (
+                  <div className="pt-1">
+                    <label className="block font-bold text-slate-700 mb-1">Tanggal TTD Manual / Kustom:</label>
+                    <input
+                      type="text"
+                      value={tempTanggalCustom}
+                      onChange={(e) => setTempTanggalCustom(e.target.value)}
+                      placeholder="Contoh: 17 Agustus 2026 atau Juli 2026"
+                      className="w-full p-2.5 border-2 border-purple-300 bg-purple-50/50 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsSignatoryModalOpen(false)}
+                  className="px-4 py-2 border rounded-xl font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onUpdateSchoolInfo({
+                      ...schoolInfo,
+                      jabatanPenandatangan: tempJabatan,
+                      namaPenandatanganCustom: tempNamaPenandatangan,
+                      nipPenandatanganCustom: tempNipPenandatangan,
+                      opsiWaktuTtd: tempOpsiWaktu,
+                      tanggalTtdCustom: tempTanggalCustom,
+                      opsiTempatTtd: tempOpsiTempat,
+                      tempatTtdCustom: tempTempatCustom,
+                    });
+                    setIsSignatoryModalOpen(false);
+                  }}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow border border-emerald-500 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" /> Simpan Pengaturan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {exportCurrentItem && (
         <div
           style={{
@@ -1843,7 +2327,7 @@ interface CardItemProps {
   type: 'siswa' | 'guru';
   data: Student | Teacher;
   schoolInfo: SchoolInfo;
-  cardTheme: 'amber' | 'emerald' | 'blue' | 'purple';
+  cardTheme: 'white' | 'amber' | 'emerald' | 'blue' | 'purple';
   qrUrl?: string;
   onTriggerPhotoUpload?: () => void;
 }
@@ -1861,22 +2345,36 @@ const CardItem: React.FC<CardItemProps> = ({
   const teacher = !isStudent ? (data as Teacher) : null;
 
   // Dynamic Card Theme Classes
-  let headerGradient = 'from-amber-600 via-amber-700 to-amber-800 border-amber-400/60';
-  let borderClass = 'border-amber-600';
-  let subTitleColor = 'text-amber-300';
+  let headerGradient = 'from-slate-100 via-white to-slate-100 border-slate-300';
+  let borderClass = 'border-slate-300';
+  let subTitleColor = 'text-emerald-700 font-extrabold';
+  let headerTitleColor = 'text-slate-950';
+  let headerSubTextColor = 'text-slate-600 font-bold';
 
-  if (cardTheme === 'emerald') {
+  if (cardTheme === 'amber') {
+    headerGradient = 'from-amber-600 via-amber-700 to-amber-800 border-amber-400/60';
+    borderClass = 'border-amber-600';
+    subTitleColor = 'text-amber-300';
+    headerTitleColor = 'text-white';
+    headerSubTextColor = 'text-amber-100/90';
+  } else if (cardTheme === 'emerald') {
     headerGradient = 'from-emerald-700 via-teal-800 to-emerald-950 border-emerald-400/60';
     borderClass = 'border-emerald-600';
     subTitleColor = 'text-emerald-300';
+    headerTitleColor = 'text-white';
+    headerSubTextColor = 'text-emerald-100/90';
   } else if (cardTheme === 'blue') {
     headerGradient = 'from-blue-800 via-indigo-900 to-slate-950 border-blue-400/60';
     borderClass = 'border-blue-600';
     subTitleColor = 'text-blue-300';
+    headerTitleColor = 'text-white';
+    headerSubTextColor = 'text-blue-100/90';
   } else if (cardTheme === 'purple') {
     headerGradient = 'from-purple-800 via-indigo-900 to-slate-950 border-purple-400/60';
     borderClass = 'border-purple-600';
     subTitleColor = 'text-purple-300';
+    headerTitleColor = 'text-white';
+    headerSubTextColor = 'text-purple-100/90';
   }
 
   const fotoUrl = isStudent ? student?.fotoUrl : teacher?.fotoUrl;
@@ -1887,10 +2385,10 @@ const CardItem: React.FC<CardItemProps> = ({
     >
       {/* Top Card Header */}
       <div
-        className={`bg-gradient-to-r ${headerGradient} text-white px-3.5 py-2 flex items-center justify-between border-b-2 gap-2 shadow-inner shrink-0 h-[64px]`}
+        className={`bg-gradient-to-r ${headerGradient} px-3.5 py-2 flex items-center justify-between border-b-2 gap-2 shadow-xs shrink-0 h-[64px]`}
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-10 h-10 bg-white text-slate-950 rounded-xl p-0.5 flex items-center justify-center shrink-0 border border-amber-300 shadow-sm overflow-hidden">
+          <div className="w-10 h-10 bg-white text-slate-950 rounded-xl p-0.5 flex items-center justify-center shrink-0 border border-slate-300 shadow-xs overflow-hidden">
             {schoolInfo.logoUrl ? (
               <img
                 src={schoolInfo.logoUrl}
@@ -1898,7 +2396,7 @@ const CardItem: React.FC<CardItemProps> = ({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <Award className="w-6 h-6 text-amber-600" />
+              <Award className="w-6 h-6 text-emerald-600" />
             )}
           </div>
           <div className="min-w-0 flex-1">
@@ -1907,10 +2405,10 @@ const CardItem: React.FC<CardItemProps> = ({
             >
               KARTU ANGGOTA {isStudent ? 'SISWA' : 'GURU & PTK'}
             </span>
-            <h3 className="font-extrabold text-xs sm:text-sm uppercase tracking-wide text-white leading-tight truncate">
+            <h3 className={`font-extrabold text-xs sm:text-sm uppercase tracking-wide ${headerTitleColor} leading-tight truncate`}>
               {schoolInfo.namaSekolah}
             </h3>
-            <span className="text-[8px] text-amber-100/90 font-medium block leading-tight truncate">
+            <span className={`text-[8px] ${headerSubTextColor} block leading-tight truncate`}>
               NPSN: {schoolInfo.npsn} • {schoolInfo.kabupatenKota}
             </span>
           </div>
@@ -1999,14 +2497,16 @@ const CardItem: React.FC<CardItemProps> = ({
             </p>
             <p className="truncate">
               <strong className="text-slate-900 font-extrabold">Berlaku:</strong>{' '}
-              {isStudent ? 'selama menjadi siswa/i' : 'selama menjadi PTK'}
+              {isStudent
+                ? (schoolInfo.masaBerlakuSiswa || 'selama menjadi siswa/i')
+                : (schoolInfo.masaBerlakuGuru || 'selama menjadi PTK')}
             </p>
           </div>
         </div>
 
-        {/* QR Code Box */}
-        <div className="col-span-3 flex flex-col items-center justify-center border-l border-slate-200/80 pl-2">
-          <div className="w-[78px] h-[78px] sm:w-[86px] sm:h-[86px] bg-white p-1 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+        {/* QR Code & Signatory Box */}
+        <div className="col-span-3 flex flex-col items-center justify-between h-full border-l border-slate-200/80 pl-2 min-w-0 py-0.5">
+          <div className="w-[66px] h-[66px] sm:w-[72px] sm:h-[72px] bg-white p-1 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-center shrink-0">
             {qrUrl ? (
               <img
                 src={qrUrl}
@@ -2014,22 +2514,30 @@ const CardItem: React.FC<CardItemProps> = ({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <QrCode className="w-12 h-12 text-slate-400" />
+              <QrCode className="w-10 h-10 text-slate-400" />
             )}
           </div>
-          <span className="text-[7.5px] font-mono font-black text-slate-600 mt-1 uppercase text-center tracking-wider">
-            SCAN ABSENSI
-          </span>
+          <div className="w-full text-center min-w-0 space-y-0.5 mt-0.5">
+            <span className="text-[7.5px] font-extrabold text-slate-700 uppercase block truncate leading-tight">
+              {getSignatoryDetails(schoolInfo).jabatan}
+            </span>
+            <span className="text-[8px] font-black text-emerald-950 uppercase block truncate leading-tight">
+              {getSignatoryDetails(schoolInfo).nama}
+            </span>
+            <span className="text-[6.5px] font-mono font-bold text-slate-500 block truncate leading-none">
+              NIP. {getSignatoryDetails(schoolInfo).nip}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Card Footer Motto */}
-      <div className="bg-slate-950 text-white text-[8.5px] px-3.5 py-1.5 flex items-center justify-between border-t border-slate-800 shrink-0 h-[30px]">
-        <span className="font-mono font-bold text-amber-400 uppercase truncate">
-          {schoolInfo.kabupatenKota}, 2026
-        </span>
-        <span className="font-extrabold text-white uppercase tracking-tight truncate ml-2">
+      {/* Card Footer Motto & Signature Place/Date */}
+      <div className="bg-slate-950 text-white text-[8px] px-3.5 py-1 flex items-center justify-between border-t border-slate-800 shrink-0 h-[28px] gap-2">
+        <span className="font-extrabold text-amber-300 uppercase tracking-tight truncate min-w-0 flex-1">
           MOTTO: {schoolInfo.mottoSekolah || 'BERAKHLAK MULIA, CERDAS & BERPRESTASI'}
+        </span>
+        <span className="font-mono font-bold text-emerald-300 uppercase text-[7.5px] truncate shrink-0 ml-2">
+          {getTempatDanTanggalTtd(schoolInfo)}
         </span>
       </div>
     </div>
@@ -2041,7 +2549,7 @@ interface CardWrapperProps {
   type: 'siswa' | 'guru';
   data: Student | Teacher;
   schoolInfo: SchoolInfo;
-  cardTheme: 'amber' | 'emerald' | 'blue' | 'purple';
+  cardTheme: 'white' | 'amber' | 'emerald' | 'blue' | 'purple';
   qrUrl?: string;
   onTriggerPhotoUpload: () => void;
   onRemovePhoto: () => void;

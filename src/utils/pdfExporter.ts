@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { SchoolInfo, Student, Teacher, AttendanceRecord } from '../types';
+import { getSignatoryDetails, getTempatDanTanggalTtd } from './signatureHelper';
 
 interface PDFExportOptions {
   schoolInfo: SchoolInfo;
@@ -176,13 +177,14 @@ export function exportIndividualPDF({
   doc.setFont('helvetica', 'normal');
   doc.text(`NIP. ${schoolInfo.nipGuruKelas}`, 20, sigY + 28);
 
-  doc.text(`${schoolInfo.kelurahan || 'Sekolah'}, ${todayStr}`, pageWidth - 70, sigY);
-  doc.text('Kepala Sekolah,', pageWidth - 70, sigY + 4);
+  const sigInfo = getSignatoryDetails(schoolInfo);
+  doc.text(getTempatDanTanggalTtd(schoolInfo), pageWidth - 70, sigY);
+  doc.text(`${sigInfo.jabatan},`, pageWidth - 70, sigY + 4);
 
   doc.setFont('helvetica', 'bold');
-  doc.text(schoolInfo.namaKepalaSekolah, pageWidth - 70, sigY + 24);
+  doc.text(sigInfo.nama, pageWidth - 70, sigY + 24);
   doc.setFont('helvetica', 'normal');
-  doc.text(`NIP. ${schoolInfo.nipKepalaSekolah}`, pageWidth - 70, sigY + 28);
+  doc.text(`NIP. ${sigInfo.nip}`, pageWidth - 70, sigY + 28);
 
   // Save PDF
   const filename = `Raport_Absensi_Individu_${person.nama.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
@@ -418,14 +420,15 @@ export function exportToPDF({
   doc.setFont('helvetica', 'normal');
   doc.text(`NIP. ${schoolInfo.nipGuruKelas}`, 25, sigY + 33);
 
-  // Right side signature: Kepala Sekolah
-  doc.text(locationStr, pageWidth - 80, sigY);
-  doc.text('Kepala Sekolah,', pageWidth - 80, sigY + 5);
+  // Right side signature: Penanda Tangan Utama
+  const mainSig = getSignatoryDetails(schoolInfo);
+  doc.text(getTempatDanTanggalTtd(schoolInfo), pageWidth - 80, sigY);
+  doc.text(`${mainSig.jabatan},`, pageWidth - 80, sigY + 5);
 
   doc.setFont('helvetica', 'bold');
-  doc.text(schoolInfo.namaKepalaSekolah, pageWidth - 80, sigY + 28);
+  doc.text(mainSig.nama, pageWidth - 80, sigY + 28);
   doc.setFont('helvetica', 'normal');
-  doc.text(`NIP. ${schoolInfo.nipKepalaSekolah}`, pageWidth - 80, sigY + 33);
+  doc.text(`NIP. ${mainSig.nip}`, pageWidth - 80, sigY + 33);
 
   // Save PDF
   const filename = `Laporan_Absensi_${targetType.toUpperCase()}_${schoolInfo.namaSekolah.replace(/\s+/g, '_')}_${Date.now()}.pdf`;

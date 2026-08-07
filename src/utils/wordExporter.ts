@@ -13,6 +13,7 @@ import {
 } from 'docx';
 import { saveAs } from 'file-saver';
 import { SchoolInfo, Student, Teacher, AttendanceRecord } from '../types';
+import { getSignatoryDetails, getTempatDanTanggalTtd } from './signatureHelper';
 
 interface WordExportOptions {
   schoolInfo: SchoolInfo;
@@ -191,28 +192,31 @@ export async function exportIndividualWord({
   });
 
   // Signature Block
+  const sigDetail = getSignatoryDetails(schoolInfo);
+  const tempatTglStr = getTempatDanTanggalTtd(schoolInfo);
+
   const signatureParagraphs = [
     new Paragraph({ text: '' }),
     new Paragraph({
       children: [
-        new TextRun({ text: `Mengetahui,\t\t\t\t\t\t\t\t\t\t${schoolInfo.kelurahan || 'Sekolah'}, ${todayStr}`, size: 20 }),
+        new TextRun({ text: `Mengetahui,\t\t\t\t\t\t\t\t\t\t${tempatTglStr}`, size: 20 }),
       ],
     }),
     new Paragraph({
       children: [
-        new TextRun({ text: `Guru Kelas / Pengelola\t\t\t\t\t\t\t\t\tKepala Sekolah`, size: 20 }),
+        new TextRun({ text: `Guru Kelas / Pengelola\t\t\t\t\t\t\t\t\t${sigDetail.jabatan}`, size: 20 }),
       ],
     }),
     new Paragraph({ text: '' }),
     new Paragraph({ text: '' }),
     new Paragraph({
       children: [
-        new TextRun({ text: `${schoolInfo.namaGuruKelas}\t\t\t\t\t\t\t\t${schoolInfo.namaKepalaSekolah}`, bold: true, size: 20 }),
+        new TextRun({ text: `${schoolInfo.namaGuruKelas}\t\t\t\t\t\t\t\t${sigDetail.nama}`, bold: true, size: 20 }),
       ],
     }),
     new Paragraph({
       children: [
-        new TextRun({ text: `NIP. ${schoolInfo.nipGuruKelas}\t\t\t\t\t\t\t\tNIP. ${schoolInfo.nipKepalaSekolah}`, size: 20 }),
+        new TextRun({ text: `NIP. ${schoolInfo.nipGuruKelas}\t\t\t\t\t\t\t\tNIP. ${sigDetail.nip}`, size: 20 }),
       ],
     }),
   ];
@@ -505,17 +509,20 @@ export async function exportToWord({
   });
 
   // 4. Signature Block
+  const sigDetailMain = getSignatoryDetails(schoolInfo);
+  const tempatTglStrMain = getTempatDanTanggalTtd(schoolInfo);
+
   const signatureParagraphs = [
     new Paragraph({ text: '' }),
     new Paragraph({ text: '' }),
     new Paragraph({
       children: [
-        new TextRun({ text: `Mengetahui,\t\t\t\t\t\t\t\t\t\t${schoolInfo.kelurahan || 'Sekolah'}, ${todayStr}`, size: 20 }),
+        new TextRun({ text: `Mengetahui,\t\t\t\t\t\t\t\t\t\t${tempatTglStrMain}`, size: 20 }),
       ],
     }),
     new Paragraph({
       children: [
-        new TextRun({ text: `Guru Kelas / Pengelola\t\t\t\t\t\t\t\t\tKepala Sekolah`, size: 20 }),
+        new TextRun({ text: `Guru Kelas / Pengelola\t\t\t\t\t\t\t\t\t${sigDetailMain.jabatan}`, size: 20 }),
       ],
     }),
     new Paragraph({ text: '' }),
@@ -523,12 +530,12 @@ export async function exportToWord({
     new Paragraph({ text: '' }),
     new Paragraph({
       children: [
-        new TextRun({ text: `${schoolInfo.namaGuruKelas}\t\t\t\t\t\t\t\t${schoolInfo.namaKepalaSekolah}`, bold: true, size: 20 }),
+        new TextRun({ text: `${schoolInfo.namaGuruKelas}\t\t\t\t\t\t\t\t${sigDetailMain.nama}`, bold: true, size: 20 }),
       ],
     }),
     new Paragraph({
       children: [
-        new TextRun({ text: `NIP. ${schoolInfo.nipGuruKelas}\t\t\t\t\t\t\t\tNIP. ${schoolInfo.nipKepalaSekolah}`, size: 20 }),
+        new TextRun({ text: `NIP. ${schoolInfo.nipGuruKelas}\t\t\t\t\t\t\t\tNIP. ${sigDetailMain.nip}`, size: 20 }),
       ],
     }),
   ];

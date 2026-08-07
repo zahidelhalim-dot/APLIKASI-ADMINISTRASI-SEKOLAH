@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SchoolInfo, Student, Teacher, AttendanceRecord, ClassCategory } from '../types';
 import { MONTH_LIST } from '../data/initialData';
+import { getSignatoryDetails, getTempatDanTanggalTtd } from '../utils/signatureHelper';
 import { exportToPDF, exportIndividualPDF } from '../utils/pdfExporter';
 import { exportToWord, exportIndividualWord } from '../utils/wordExporter';
 import { ClassFilterBar } from './ClassFilterBar';
@@ -326,8 +327,9 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
 
             <div>
               <label className="block font-black text-slate-700 mb-1">PENANDATANGAN DOKUMEN</label>
-              <div className="p-2 bg-slate-50 border rounded-lg text-slate-800 font-semibold truncate">
-                Kepala Sekolah: <span className="font-bold text-emerald-900">{schoolInfo.namaKepalaSekolah}</span>
+              <div className="p-2 bg-slate-50 border rounded-lg text-slate-800 font-semibold truncate flex items-center justify-between">
+                <span>{getSignatoryDetails(schoolInfo).jabatan}: <strong className="text-emerald-900">{getSignatoryDetails(schoolInfo).nama}</strong></span>
+                <span className="text-[10px] text-slate-500 font-normal ml-2">({getTempatDanTanggalTtd(schoolInfo)})</span>
               </div>
             </div>
           </div>
@@ -468,11 +470,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                 </div>
 
                 <div className="text-right">
-                  <p>{schoolInfo.kelurahan || 'Sekolah'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                  <p>Kepala Sekolah,</p>
+                  <p>{getTempatDanTanggalTtd(schoolInfo)}</p>
+                  <p>{getSignatoryDetails(schoolInfo).jabatan},</p>
                   <div className="h-16"></div>
-                  <p className="font-bold underline text-emerald-950">{schoolInfo.namaKepalaSekolah}</p>
-                  <p className="text-[11px] text-slate-600">NIP. {schoolInfo.nipKepalaSekolah}</p>
+                  <p className="font-bold underline text-emerald-950">{getSignatoryDetails(schoolInfo).nama}</p>
+                  <p className="text-[11px] text-slate-600">NIP. {getSignatoryDetails(schoolInfo).nip}</p>
                 </div>
               </div>
             </div>
@@ -723,11 +725,11 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
                   </div>
 
                   <div className="text-right">
-                    <p>{schoolInfo.kelurahan || 'Sekolah'}, {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                    <p>Kepala Sekolah,</p>
+                    <p>{getTempatDanTanggalTtd(schoolInfo)}</p>
+                    <p>{getSignatoryDetails(schoolInfo).jabatan},</p>
                     <div className="h-16"></div>
-                    <p className="font-bold underline text-emerald-950">{schoolInfo.namaKepalaSekolah}</p>
-                    <p className="text-[11px] text-slate-600">NIP. {schoolInfo.nipKepalaSekolah}</p>
+                    <p className="font-bold underline text-emerald-950">{getSignatoryDetails(schoolInfo).nama}</p>
+                    <p className="text-[11px] text-slate-600">NIP. {getSignatoryDetails(schoolInfo).nip}</p>
                   </div>
                 </div>
               </div>

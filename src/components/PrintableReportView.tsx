@@ -1,5 +1,6 @@
 import React from 'react';
 import { SchoolInfo, Student, Teacher, AttendanceRecord, MonthOption } from '../types';
+import { getSignatoryDetails, getTempatDanTanggalTtd } from '../utils/signatureHelper';
 
 interface PrintableReportViewProps {
   schoolInfo: SchoolInfo;
@@ -220,12 +221,12 @@ export const PrintableReportView: React.FC<PrintableReportViewProps> = ({
 
         <div className="text-right">
           <p>
-            {schoolInfo.kelurahan || 'Sekolah'}, {todayStr}
+            {getTempatDanTanggalTtd(schoolInfo)}
           </p>
-          <p>Kepala Sekolah,</p>
+          <p>{getSignatoryDetails(schoolInfo).jabatan},</p>
           <div className="h-16"></div>
-          <p className="underline">{schoolInfo.namaKepalaSekolah}</p>
-          <p className="text-[10px]">NIP. {schoolInfo.nipKepalaSekolah}</p>
+          <p className="underline">{getSignatoryDetails(schoolInfo).nama}</p>
+          <p className="text-[10px]">NIP. {getSignatoryDetails(schoolInfo).nip}</p>
         </div>
       </div>
     </div>
